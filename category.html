@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CatThread - Category</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background: #eef2f5; font-family: Tahoma, Arial, sans-serif; padding: 20px; margin: 0; }
+        .container { max-width: 900px; margin: 0 auto; background: white; border: 1px solid #ccc; padding: 15px; }
+        header { background: #2b4c7e; color: white; padding: 15px; margin-bottom: 15px; }
+        h1 { margin: 0; font-size: 24px; }
+        .back-link { display: inline-block; margin-bottom: 15px; color: #1a0dab; text-decoration: none; font-size: 14px; }
+        .back-link:hover { text-decoration: underline; }
+        .board-header { background: #3b5998; color: white; padding: 8px 12px; font-weight: bold; font-size: 14px; }
+        .thread-item { padding: 12px; border-bottom: 1px solid #ddd; }
+        .thread-item a { color: #1a0dab; font-weight: bold; text-decoration: none; font-size: 15px; }
+        .thread-item a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1 id="cat-title">Loading Category...</h1>
+        </header>
+
+        <a href="index.html" class="back-link">&larr; Back to Home</a>
+
+        <div class="board-header">
+            Threads in this Board
+        </div>
+
+        <div id="threads-list">
+            <div style="padding: 15px; color: #666;">Loading threads...</div>
+        </div>
+    </div>
+
+    <script>
+        // Your public Supabase credentials
+        const SUPABASE_URL = 'https://goqyxiucsxzjfdxbdekp.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvcXl4aXVjc3h6amZkeGJkZWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0NTk2OTUsImV4cCI6MjEwMzAzNTY5NX0.3exRdGjsaOrPolFzYAlO-ytlfUHiTa9-SiodUFjtHIk';
+
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Get the category ID from the URL (?id=1)
+        const urlParams = new URLSearchParams(window.location.search);
+        const categoryId = urlParams.get('id');
+
+        async function loadCategoryData() {
+            if (!categoryId) {
+                document.getElementById('cat-title').innerText = "Category Not Found";
+                return;
+            }
+
+            // 1. Fetch category name
+            const { data: category } = await _supabase
+                .from('categories')
+                .select('*')
+                .eq('id', categoryId)
+                .single();
+
+            if (category) {
+                document.getElementById('cat-title').innerText = '🐱 CatThread - ' + category.name;
+            }
+
+            // 2. Fetch threads belonging to this category
+            const container = document.getElementById('threads-list');
+            const { data: threads, error } = await _supabase
+                .from('threads')
+                .select('*')
+                .eq('category_id', categoryId);
+
+            if (error) {
+                container.innerHTML = `<div style="padding: 15px; color: red;">Error loading threads: ${error.message}</div>`;
+                return;
+            }
+
+            if (!threads || threads.length === 0) {
+                container.innerHTML = `<div style="padding: 15px; color: #666;">No threads in this board yet. Check back later or create one!</div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            threads.forEach(thread => {
+                container.innerHTML += `
+                    <div class="thread-item">
+                        <a href="#">${thread.title}</a>
+                        <p style="font-size: 11px; color: #666; margin: 4px 0 0 0;">Posted by ${thread.author_name || 'Anonymous'}</p>
+                    </div>
+                `;
+            });
+        }
+
+        loadCategoryData();
+    </script>
+</body>
+</html>
