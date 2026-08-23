@@ -2,46 +2,81 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CatThread - 2016 Forums</title>
+    <title>CatThread</title>
+    <!-- Load Supabase JavaScript Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background-color: #eef2f5; font-family: Tahoma, Arial, sans-serif; margin: 0; color: #111; }
-        header { background-color: #2b4c7e; color: white; padding: 15px 20px; border-bottom: 4px solid #1f355c; }
-        .container { max-width: 900px; margin: 20px auto; background: white; border: 1px solid #ccc; padding: 15px; }
-        .category-header { background-color: #3b5998; color: white; padding: 8px 12px; font-weight: bold; font-size: 14px; }
-        .board { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #ddd; }
-        .board a { color: #1a0dab; font-weight: bold; text-decoration: none; font-size: 16px; }
-        .board a:hover { text-decoration: underline; }
-        .desc { font-size: 12px; color: #666; margin: 4px 0 0 0; }
-        .stats { text-align: right; font-size: 12px; color: #555; }
+        body { background: #eef2f5; font-family: Tahoma, Arial, sans-serif; padding: 20px; margin: 0; }
+        .container { max-width: 900px; margin: 0 auto; background: white; border: 1px solid #ccc; padding: 15px; }
+        header { background: #2b4c7e; color: white; padding: 15px; margin-bottom: 15px; }
+        h1 { margin: 0; font-size: 24px; }
+        .announcement { background: #f0f4f8; border: 1px solid #bcd; padding: 10px; margin-bottom: 15px; font-size: 13px; }
+        .board-header { background: #3b5998; color: white; padding: 8px 12px; font-weight: bold; font-size: 14px; }
+        .category-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #ddd; }
+        .category-item a { color: #1a0dab; font-weight: bold; text-decoration: none; font-size: 16px; }
+        .category-item a:hover { text-decoration: underline; }
+        .category-desc { font-size: 12px; color: #666; margin: 4px 0 0 0; }
+        .badge { textAlign: right; font-size: 12px; color: #2b4c7e; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1 style="margin:0; font-size: 24px;">🐱 CatThread</h1>
-    </header>
-
     <div class="container">
-        <div style="background: #f0f4f8; border: 1px solid #bcd; padding: 10px; margin-bottom: 15px; font-size: 13px;">
-            📢 <b>Announcement:</b> Welcome to CatThread! The 2016 nostalgia trip begins now.
+        <header>
+            <h1>🐱 CatThread</h1>
+        </header>
+
+        <div class="announcement">
+            📢 <b>Announcement:</b> Welcome to CatThread! Connected to Supabase.
         </div>
 
-        <div class="category-header">Main Category</div>
-        <div class="board">
-            <div>
-                <a href="#">General Discussion</a>
-                <p class="desc">Talk about anything under the sun.</p>
-            </div>
-            <div class="stats"><b>142</b> threads<br><b>1,205</b> posts</div>
+        <div class="board-header">
+            Main Categories
         </div>
-        <div class="board">
-            <div>
-                <a href="#">The Lounge / Off-Topic</a>
-                <p class="desc">Memes, casual chat, and late-night thoughts.</p>
-            </div>
-            <div class="stats"><b>89</b> threads<br><b>3,410</b> posts</div>
+
+        <div id="categories-list">
+            <div style="padding: 15px; color: #666;">Loading boards...</div>
         </div>
     </div>
 
+    <script>
+        // Your public Supabase credentials from your Vercel/Supabase project
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE';
+
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function loadCategories() {
+            const container = document.getElementById('categories-list');
+            
+            const { data: categories, error } = await _supabase.from('categories').select('*');
+
+            if (error) {
+                container.innerHTML = `<div style="padding: 15px; color: red;">Error loading categories: ${error.message}</div>`;
+                return;
+            }
+
+            if (!categories || categories.length === 0) {
+                container.innerHTML = `<div style="padding: 15px; color: #666;">No categories found.</div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            categories.forEach(cat => {
+                container.innerHTML += `
+                    <div class="category-item">
+                        <div>
+                            <a href="category.html?id=${cat.id}">${cat.name}</a>
+                            <p class="category-desc">${cat.description || ''}</p>
+                        </div>
+                        <div class="badge">Active Board</div>
+                    </div>
+                `;
+            });
+        }
+
+        loadCategories();
+    </script>
 </body>
 </html>
