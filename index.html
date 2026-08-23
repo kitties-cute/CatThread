@@ -46,7 +46,6 @@
             border: 2px solid var(--border-color);
             padding: 15px;
             box-sizing: border-box;
-            transition: max-width 0.3s;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
@@ -236,7 +235,6 @@
 <body>
 
     <div class="settings-menu">
-        <img src="icons/settings.png" alt="Settings" class="forum-icon" id="icon-settings"> 
         <span>Settings:</span>
         <button onclick="toggleDarkMode()">Dark Mode</button>
         <button onclick="toggleWideMode()">Wide Mode</button>
@@ -244,15 +242,11 @@
 
     <div class="container">
         <header>
-            <h1>
-                <img src="icons/cat.png" alt="CatIcon" class="forum-icon" id="icon-site-logo" style="width: 24px; height: 24px;"> 
-                CatThread
-            </h1>
+            <h1>CatThread</h1>
             <div id="user-status" style="font-weight: bold;">Not logged in</div>
         </header>
 
         <div class="announcement">
-            <img src="icons/announcement.png" alt="Announcement" class="forum-icon" id="icon-announcement">
             <div><b>Announcement:</b> Welcome to CatThread! Fully interactive forums.</div>
         </div>
 
@@ -274,12 +268,12 @@
                     <button class="action-btn" onclick="signUpWithEmail()">Sign Up</button>
                     <button class="action-btn" onclick="loginWithEmail()">Log In</button>
                     
-                    <!-- Official Google Pre-Approved Button Markup connected to Supabase OAuth -->
+                    <!-- Official Google Button -->
                     <button type="button" class="gsi-material-button" onclick="loginWithGoogle()">
                       <div class="gsi-material-button-state"></div>
                       <div class="gsi-material-button-content-wrapper" style="display: flex; align-items: center;">
                         <div class="gsi-material-button-icon">
-                          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: block; width: 100%; height: 100%;">
+                          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" style="display: block; width: 100%; height: 100%;">
                             <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
                             <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
                             <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
@@ -290,9 +284,17 @@
                         <span class="gsi-material-button-contents">Sign in with Google</span>
                       </div>
                     </button>
-
                 </div>
             </div>
+
+            <!-- Username choice prompt container for Google users without a profile yet -->
+            <div id="username-setup-panel" style="display:none;">
+                <h3 style="margin-top:0; color: #3a75c4;">Choose Your Forum Username</h3>
+                <p style="font-size: 13px;">You signed in with Google! Please pick a unique username to continue:</p>
+                <input type="text" id="google-chosen-username" placeholder="Enter Unique Username">
+                <button class="action-btn" onclick="saveGoogleUsername()">Save Username</button>
+            </div>
+
             <div id="logged-in-panel" style="display:none;">
                 <p>Welcome back, <span id="current-username" style="font-weight:bold;"></span>!</p>
                 <button class="action-btn" style="background: #e53e3e;" onclick="logout()">Log Out</button>
@@ -307,12 +309,8 @@
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        if (localStorage.getItem('darkMode') === 'enabled') {
-            document.body.classList.add('dark-mode');
-        }
-        if (localStorage.getItem('wideMode') === 'enabled') {
-            document.body.classList.add('wide-mode');
-        }
+        if (localStorage.getItem('darkMode') === 'enabled') document.body.classList.add('dark-mode');
+        if (localStorage.getItem('wideMode') === 'enabled') document.body.classList.add('wide-mode');
 
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
@@ -353,8 +351,10 @@
             const password = document.getElementById('password').value;
 
             if (!username) { alert('Please enter a unique username!'); return; }
+            if (!email || !password) { alert('Please enter both email and password!'); return; }
 
-            const { data: existing } = await _supabase.from('profiles').select('username').eq('username', username).single();
+            // Check if username is already taken
+            const { data: existing } = await _supabase.from('profiles').select('username').eq('username', username).maybeSingle();
             if (existing) {
                 alert('That username is already taken! Choose another.');
                 return;
@@ -364,25 +364,57 @@
             if (error) { alert(error.message); return; }
 
             if (data.user) {
-                await _supabase.from('profiles').insert([{ id: data.user.id, username }]);
-                alert('Signup successful! Check your email to confirm if required, or try logging in.');
+                const { error: profileError } = await _supabase.from('profiles').insert([{ id: data.user.id, username }]);
+                if (profileError) {
+                    alert('Error saving username: ' + profileError.message);
+                    return;
+                }
+                alert('Signup successful! You are now logged in.');
+                location.reload();
             }
         }
 
         async function loginWithEmail() {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
+            
+            if (!email || !password) { alert('Please enter email and password.'); return; }
+
             const { error } = await _supabase.auth.signInWithPassword({ email, password });
-            if (error) { alert(error.message); } else { location.reload(); }
+            if (error) { 
+                alert(error.message); 
+            } else { 
+                location.reload(); 
+            }
         }
 
-        // Clean Supabase OAuth login handler for Google
         async function loginWithGoogle() {
             const { error } = await _supabase.auth.signInWithOAuth({
-                provider: 'google'
+                provider: 'google',
+                options: { redirectTo: window.location.origin + window.location.pathname }
             });
+            if (error) alert(error.message);
+        }
+
+        async function saveGoogleUsername() {
+            const username = document.getElementById('google-chosen-username').value.trim();
+            if (!username) { alert('Please enter a username!'); return; }
+
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) return;
+
+            // Check if taken
+            const { data: existing } = await _supabase.from('profiles').select('username').eq('username', username).maybeSingle();
+            if (existing) {
+                alert('That username is already taken! Choose another.');
+                return;
+            }
+
+            const { error } = await _supabase.from('profiles').insert([{ id: session.user.id, username }]);
             if (error) {
                 alert(error.message);
+            } else {
+                location.reload();
             }
         }
 
@@ -394,12 +426,19 @@
         async function checkUser() {
             const { data: { session } } = await _supabase.auth.getSession();
             if (session) {
-                document.getElementById('auth-forms').style.display = 'none';
-                document.getElementById('logged-in-panel').style.display = 'block';
+                // Check if user has a profile/username set
+                const { data: profile } = await _supabase.from('profiles').select('username').eq('id', session.user.id).maybeSingle();
                 
-                const { data: profile } = await _supabase.from('profiles').select('username').eq('id', session.user.id).single();
-                document.getElementById('current-username').innerText = profile ? profile.username : session.user.email;
-                document.getElementById('user-status').innerText = `Logged in as: ${profile ? profile.username : 'User'}`;
+                if (!profile) {
+                    // Google user logged in but hasn't picked a username yet
+                    document.getElementById('auth-forms').style.display = 'none';
+                    document.getElementById('username-setup-panel').style.display = 'block';
+                } else {
+                    document.getElementById('auth-forms').style.display = 'none';
+                    document.getElementById('logged-in-panel').style.display = 'block';
+                    document.getElementById('current-username').innerText = profile.username;
+                    document.getElementById('user-status').innerText = `Logged in as: ${profile.username}`;
+                }
             }
         }
 
