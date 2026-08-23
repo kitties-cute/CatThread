@@ -116,23 +116,39 @@
             }
         }
 
-        async function postReply() {
-            const content = document.getElementById('reply-content').value.trim();
-            const { data: { session } } = await _supabase.auth.getSession();
-            if (!content) { alert('Reply cannot be empty.'); return; }
+        async function postReply(threadId, replyContent) {
+    const { data: { session } } = await _supabase.auth.getSession();
+    if (!session) {
+        alert("You must be logged in to reply!");
+        return;
+    }
 
-            const { error } = await _supabase.from('replies').insert([{
-                thread_id: threadId,
-                content: content,
-                user_id: session.user.id
-            }]);
+    // 1. Get the current user's username from your profiles table
+    const { data: profile } = await _supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', session.user.id)
+        .single();
 
-            if (error) alert('Error: ' + error.message);
-            else {
-                document.getElementById('reply-content').value = '';
-                loadReplies();
+    const authorName = profile ? profile.username : session.user.email;
+
+    // 2. Insert into the posts table using author_name
+    const { error } = await _supabase
+        .from('posts') // or whatever your replies table is named
+        .insert([
+            { 
+                thread_id: threadId, 
+                content: replyContent, 
+                author_name: authorName 
             }
-        }
+        ]);
+
+    if (error) {
+        alert("Error posting reply: " + error.message);
+    } else {
+        location.reload(); // Refresh the page to see the new reply
+    }
+}
 
         loadThread();
         checkAuth();
