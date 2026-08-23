@@ -54,8 +54,7 @@
         }
 
         h1 { margin: 0; font-size: 24px; }
-        .forum-icon { width: 20px; height: 20px; vertical-align: middle; object-fit: contain; }
-
+        
         .post-card {
             border: 1px solid var(--border-color);
             padding: 12px;
@@ -143,8 +142,7 @@
         </header>
 
         <div id="thread-view">
-            <h2 id="thread-title">Loading thread...</h2>
-            <div id="original-post" class="post-card"></div>
+            <h2 id="thread-title">Discussion Thread</h2>
         </div>
 
         <h3>Replies</h3>
@@ -184,26 +182,33 @@
         }
 
         async function checkUserSession() {
-            const { data: { session } } = await _supabase.auth.getSession();
-            if (session) {
-                document.getElementById('reply-section').style.display = 'block';
-                document.getElementById('login-prompt-reply').style.display = 'none';
-                
-                const { data: profile } = await _supabase.from('profiles').select('username').eq('id', session.user.id).single();
-                const name = profile ? profile.username : session.user.email;
-                document.getElementById('user-status').innerText = `Logged in: ${name}`;
-            } else {
+            try {
+                const { data: { session } } = await _supabase.auth.getSession();
+                if (session) {
+                    document.getElementById('reply-section').style.display = 'block';
+                    document.getElementById('login-prompt-reply').style.display = 'none';
+                    
+                    const { data: profile } = await _supabase.from('profiles').select('username').eq('id', session.user.id).single();
+                    const name = profile && profile.username ? profile.username : session.user.email;
+                    document.getElementById('user-status').innerText = `Logged in: ${name}`;
+                } else {
+                    document.getElementById('user-status').innerText = 'Not logged in';
+                }
+            } catch (err) {
+                console.error("Session check error:", err);
                 document.getElementById('user-status').innerText = 'Not logged in';
             }
         }
 
         async function loadThreadData() {
+            const repliesContainer = document.getElementById('replies-list');
+            
             if (!threadId) {
-                showErrorModal('No thread ID provided in the URL.');
+                repliesContainer.innerHTML = '<p style="color: #777;">No thread selected. Please go back and select a thread.</p>';
                 return;
             }
 
-            // Load replies from 'posts' table mapped to thread_id
+            // NOTE: If your table name is not 'posts', change 'posts' below to your exact table name (e.g. 'replies')
             const { data: replies, error } = await _supabase
                 .from('posts')
                 .select('*')
@@ -212,11 +217,11 @@
 
             if (error) {
                 showErrorModal('Could not load replies: ' + error.message);
+                repliesContainer.innerHTML = '<p style="color: red;">Error loading replies.</p>';
                 return;
             }
 
-            const repliesContainer = document.getElementById('replies-list');
-            if (replies.length === 0) {
+            if (!replies || replies.length === 0) {
                 repliesContainer.innerHTML = '<p style="color: #777;">No replies yet. Be the first!</p>';
                 return;
             }
@@ -245,16 +250,15 @@
                 return;
             }
 
-            // Get current user's profile username to fill author_name column
             const { data: profile } = await _supabase
                 .from('profiles')
                 .select('username')
                 .eq('id', session.user.id)
                 .single();
 
-            const authorName = profile ? profile.username : session.user.email;
+            const authorName = profile && profile.username ? profile.username : session.user.email;
 
-            // Insert into posts table matching your schema columns
+            // Insert into your posts table
             const { error } = await _supabase
                 .from('posts')
                 .insert([
@@ -273,6 +277,7 @@
             }
         }
 
+        // Initialize page execution safely
         checkUserSession();
         loadThreadData();
     </script>
