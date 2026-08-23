@@ -125,11 +125,15 @@
             <div style="padding: 15px; color: #777;">Loading discussions...</div>
         </div>
 
-        <div class="post-box" id="new-thread-section">
+        <div class="post-box" id="new-thread-section" style="display:none;">
             <h3 style="margin-top:0;">Create a New Discussion</h3>
-            <input type="text" id="thread-author" placeholder="Your Name / Author">
             <input type="text" id="thread-title" placeholder="Thread Title">
             <button class="action-btn" onclick="createThread()">Post Thread</button>
+        </div>
+
+        <div id="login-prompt" style="margin-top: 20px; padding: 15px; border: 1px solid var(--border-color); text-align: center; display:none;">
+            <p>You must be logged in with a username to create a thread.</p>
+            <a href="index.html" style="color: #1e90ff; font-weight: bold;">Go to Home to Log In</a>
         </div>
     </div>
 
@@ -146,21 +150,15 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const categoryId = urlParams.get('id');
+        let currentUsername = '';
 
         async function loadCategoryDetails() {
-            if (!categoryId) {
-                document.getElementById('category-name').innerText = 'Category not found';
-                return;
+            if (!categoryId) return;
+            const { data } = await _supabase.from('categories').select('*').eq('id', categoryId).single();
+            if (data) {
+                document.getElementById('category-name').innerText = data.name;
+                document.getElementById('board-title-bar').innerText = `${data.name} - Discussions`;
             }
-
-            const { data, error } = await _supabase.from('categories').select('*').eq('id', categoryId).single();
-            if (error || !data) {
-                document.getElementById('category-name').innerText = 'Board does not exist';
-                return;
-            }
-
-            document.getElementById('category-name').innerText = data.name;
-            document.getElementById('board-title-bar').innerText = `${data.name} - Discussions`;
         }
 
         async function loadThreads() {
@@ -173,12 +171,7 @@
                 .eq('category_id', categoryId)
                 .order('created_at', { ascending: false });
 
-            if (error) {
-                container.innerHTML = `<div style="padding: 15px; color: red;">Error loading threads: ${error.message}</div>`;
-                return;
-            }
-
-            if (threads.length === 0) {
+            if (error || !threads || threads.length === 0) {
                 container.innerHTML = `<div style="padding: 15px; color: #777;">No threads here yet. Be the first to post below!</div>`;
                 return;
             }
@@ -194,19 +187,29 @@
             });
         }
 
-        async function createThread() {
-            const author = document.getElementById('thread-author').value.trim();
-            const title = document.getElementById('thread-title').value.trim();
-
-            if (!author || !title) {
-                alert('Please enter both your name and a thread title!');
-                return;
+        async function checkAuthStatus() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session) {
+                const { data: profile } = await _supabase.from('profiles').select('username').eq('id', session.user.id).maybeSingle();
+                if (profile) {
+                    currentUsername = profile.username;
+                    document.getElementById('new-thread-section').style.display = 'block';
+                } else {
+                    document.getElementById('login-prompt').style.display = 'block';
+                }
+            } else {
+                document.getElementById('login-prompt').style.display = 'block';
             }
+        }
+
+        async function createThread() {
+            const title = document.getElementById('thread-title').value.trim();
+            if (!title) { alert('Please enter a thread title!'); return; }
 
             const { error } = await _supabase.from('threads').insert([{
                 category_id: categoryId,
                 title: title,
-                author_name: author
+                author_name: currentUsername
             }]);
 
             if (error) {
@@ -223,6 +226,7 @@
 
         loadCategoryDetails();
         loadThreads();
+        checkAuthStatus();
     </script>
 </body>
 </html>
