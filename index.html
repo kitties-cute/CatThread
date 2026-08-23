@@ -3,31 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <title>CatThread</title>
-    <!-- Load Supabase JavaScript Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #eef2f5; font-family: Tahoma, Arial, sans-serif; padding: 20px; margin: 0; }
-        .container { max-width: 900px; margin: 0 auto; background: white; border: 1px solid #ccc; padding: 15px; }
-        header { background: #2b4c7e; color: white; padding: 15px; margin-bottom: 15px; }
-        h1 { margin: 0; font-size: 24px; }
-        .announcement { background: #f0f4f8; border: 1px solid #bcd; padding: 10px; margin-bottom: 15px; font-size: 13px; }
-        .board-header { background: #3b5998; color: white; padding: 8px 12px; font-weight: bold; font-size: 14px; }
-        .category-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #ddd; }
+        :root {
+            --bg-color: #eef2f5;
+            --container-bg: #white;
+            --text-color: #000;
+            --border-color: #ccc;
+            --header-bg: #2b4c7e;
+            --sub-header: #3b5998;
+            --announcement-bg: #f0f4f8;
+            --max-width: 900px;
+        }
+
+        body.dark-mode {
+            --bg-color: #121212;
+            --container-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --border-color: #444;
+            --header-bg: #1a2a40;
+            --sub-header: #2c3e50;
+            --announcement-bg: #252525;
+        }
+
+        body.wide-mode {
+            --max-width: 100%;
+        }
+
+        body { background: var(--bg-color); color: var(--text-color); font-family: Tahoma, Arial, sans-serif; padding: 20px; margin: 0; transition: background 0.3s, color 0.3s; }
+        .container { max-width: var(--max-width); margin: 0 auto; background: var(--container-bg); border: 1px solid var(--border-color); padding: 15px; transition: max-width 0.3s; }
+        
+        /* Corner Settings Menu */
+        .settings-menu { position: fixed; top: 10px; right: 10px; background: var(--container-bg); border: 1px solid var(--border-color); padding: 8px; font-size: 12px; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .settings-menu button { background: var(--header-bg); color: white; border: none; padding: 4px 8px; cursor: pointer; margin-left: 5px; }
+
+        header { background: var(--header-bg); color: white; padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { margin: 0; font-size: 24px; display: flex; align-items: center; gap: 10px; }
+        
+        /* Icon placeholders (replace src with your icon image files later) */
+        .icon-img { width: 24px; height: 24px; vertical-align: middle; background: #ddd; display: inline-block; }
+
+        .announcement { background: var(--announcement-bg); border: 1px solid var(--border-color); padding: 10px; margin-bottom: 15px; font-size: 13px; }
+        .board-header { background: var(--sub-header); color: white; padding: 8px 12px; font-weight: bold; font-size: 14px; }
+        .category-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--border-color); align-items: center; }
         .category-item a { color: #1a0dab; font-weight: bold; text-decoration: none; font-size: 16px; }
-        .category-item a:hover { text-decoration: underline; }
+        body.dark-mode .category-item a { color: #8ab4f8; }
         .category-desc { font-size: 12px; color: #666; margin: 4px 0 0 0; }
-        .badge { textAlign: right; font-size: 12px; color: #2b4c7e; font-weight: bold; }
+        body.dark-mode .category-desc { color: #aaa; }
+        
+        .auth-box { margin-top: 20px; padding: 15px; border: 1px solid var(--border-color); background: var(--announcement-bg); }
+        input { padding: 6px; margin: 5px 0; width: 100%; box-sizing: border-box; }
+        button.action-btn { background: var(--header-bg); color: white; border: none; padding: 8px 12px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
+    <!-- Corner Settings Menu -->
+    <div class="settings-menu">
+        ⚙️ Settings: 
+        <button onclick="toggleDarkMode()">Dark Mode</button>
+        <button onclick="toggleWideMode()">Wide Mode</button>
+    </div>
+
     <div class="container">
         <header>
-            <h1>🐱 CatThread</h1>
+            <h1>
+                <!-- Drop your icon image files in later by changing src="icons/cat.png" -->
+                <img src="" alt="CatIcon" class="icon-img" id="site-icon"> 
+                CatThread
+            </h1>
+            <div id="user-status">Not logged in</div>
         </header>
 
         <div class="announcement">
-            📢 <b>Announcement:</b> Welcome to CatThread! Connected to Supabase.
+            📢 <b>Announcement:</b> Welcome to CatThread! Fully interactive forums.
         </div>
 
         <div class="board-header">
@@ -37,28 +86,59 @@
         <div id="categories-list">
             <div style="padding: 15px; color: #666;">Loading boards...</div>
         </div>
+
+        <!-- Authentication & Signup Panel -->
+        <div class="auth-box" id="auth-section">
+            <h3 style="margin-top:0;">Account / Sign Up</h3>
+            <div id="auth-forms">
+                <input type="text" id="username" placeholder="Unique Username (Required for signup)">
+                <input type="email" id="email" placeholder="Email Address">
+                <input type="password" id="password" placeholder="Password">
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="action-btn" onclick="signUpWithEmail()">Sign Up</button>
+                    <button class="action-btn" onclick="loginWithEmail()">Log In</button>
+                    <button class="action-btn" style="background: #ea4335;" onclick="loginWithGoogle()">Log In with Google</button>
+                </div>
+            </div>
+            <div id="logged-in-panel" style="display:none;">
+                <p>Welcome back, <span id="current-username" style="font-weight:bold;"></span>!</p>
+                <button class="action-btn" style="background: #a90000;" onclick="logout()">Log Out</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Your public Supabase credentials from your Vercel/Supabase project
         const SUPABASE_URL = 'https://goqyxiucsxzjfdxbdekp.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvcXl4aXVjc3h6amZkeGJkZWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0NTk2OTUsImV4cCI6MjEwMzAzNTY5NX0.3exRdGjsaOrPolFzYAlO-ytlfUHiTa9-SiodUFjtHIk';
 
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // --- LocalStorage Settings (Dark Mode & Wide Mode) ---
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            document.body.classList.add('dark-mode');
+        }
+        if (localStorage.getItem('wideMode') === 'enabled') {
+            document.body.classList.add('wide-mode');
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode') ? 'enabled' : 'disabled');
+        }
+
+        function toggleWideMode() {
+            document.body.classList.toggle('wide-mode');
+            localStorage.setItem('wideMode', document.body.classList.contains('wide-mode') ? 'enabled' : 'disabled');
+        }
+
+        // --- Load Categories ---
         async function loadCategories() {
             const container = document.getElementById('categories-list');
-            
             const { data: categories, error } = await _supabase.from('categories').select('*');
 
             if (error) {
-                container.innerHTML = `<div style="padding: 15px; color: red;">Error loading categories: ${error.message}</div>`;
-                return;
-            }
-
-            if (!categories || categories.length === 0) {
-                container.innerHTML = `<div style="padding: 15px; color: #666;">No categories found.</div>`;
+                container.innerHTML = `<div style="padding: 15px; color: red;">Error: ${error.message}</div>`;
                 return;
             }
 
@@ -70,13 +150,69 @@
                             <a href="category.html?id=${cat.id}">${cat.name}</a>
                             <p class="category-desc">${cat.description || ''}</p>
                         </div>
-                        <div class="badge">Active Board</div>
+                        <div style="font-size:12px; font-weight:bold;">Active Board</div>
                     </div>
                 `;
             });
         }
 
+        // --- Auth Functions ---
+        async function signUpWithEmail() {
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!username) { alert('Please enter a unique username!'); return; }
+
+            // Check if username is unique in profiles table first
+            const { data: existing } = await _supabase.from('profiles').select('username').eq('username', username).single();
+            if (existing) {
+                alert('That username is already taken! Choose another.');
+                return;
+            }
+
+            const { data, error } = await _supabase.auth.signUp({ email, password });
+            if (error) { alert(error.message); return; }
+
+            if (data.user) {
+                // Save profile username
+                await _supabase.from('profiles').insert([{ id: data.user.id, username }]);
+                alert('Signup successful! Check your email to confirm if required, or try logging in.');
+            }
+        }
+
+        async function loginWithEmail() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const { error } = await _supabase.auth.signInWithPassword({ email, password });
+            if (error) { alert(error.message); } else { location.reload(); }
+        }
+
+        async function loginWithGoogle() {
+            const { error } = await _supabase.auth.signInWithOAuth({ provider: 'google' });
+            if (error) alert(error.message);
+        }
+
+        async function logout() {
+            await _supabase.auth.signOut();
+            location.reload();
+        }
+
+        async function checkUser() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session) {
+                document.getElementById('auth-forms').style.display = 'none';
+                document.getElementById('logged-in-panel').style.display = 'block';
+                
+                // Fetch profile username
+                const { data: profile } = await _supabase.from('profiles').select('username').eq('id', session.user.id).single();
+                document.getElementById('current-username').innerText = profile ? profile.username : session.user.email;
+                document.getElementById('user-status').innerText = `Logged in as: ${profile ? profile.username : 'User'}`;
+            }
+        }
+
         loadCategories();
+        checkUser();
     </script>
 </body>
 </html>
