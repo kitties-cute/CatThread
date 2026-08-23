@@ -204,10 +204,13 @@
                 <input type="text" id="username" placeholder="Unique Username (Required for signup)">
                 <input type="email" id="email" placeholder="Email Address">
                 <input type="password" id="password" placeholder="Password">
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
                     <button class="action-btn" onclick="signUpWithEmail()">Sign Up</button>
                     <button class="action-btn" onclick="loginWithEmail()">Log In</button>
-                    <button class="action-btn" style="background: #ea4335;" onclick="loginWithGoogle()">Log In with Google</button>
+                    <button class="action-btn" style="background: #ea4335; display: inline-flex; align-items: center; gap: 8px;" onclick="loginWithGoogle()">
+                        <img src="" id="google-logo" alt="Google" style="width: 16px; height: 16px; background: #fff; display: inline-block;">
+                        Log In with Google
+                    </button>
                 </div>
             </div>
             <div id="logged-in-panel" style="display:none;">
