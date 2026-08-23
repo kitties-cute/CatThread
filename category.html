@@ -5,16 +5,29 @@
     <title>CatThread - Category</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #eef2f5; font-family: Tahoma, Arial, sans-serif; padding: 20px; margin: 0; }
-        .container { max-width: 900px; margin: 0 auto; background: white; border: 1px solid #ccc; padding: 15px; }
-        header { background: #2b4c7e; color: white; padding: 15px; margin-bottom: 15px; }
+        :root {
+            --bg-color: #eef2f5; --container-bg: #white; --text-color: #000; --border-color: #ccc;
+            --header-bg: #2b4c7e; --sub-header: #3b5998; --max-width: 900px;
+        }
+        body.dark-mode {
+            --bg-color: #121212; --container-bg: #1e1e1e; --text-color: #e0e0e0; --border-color: #444;
+            --header-bg: #1a2a40; --sub-header: #2c3e50;
+        }
+        body.wide-mode { --max-width: 100%; }
+
+        body { background: var(--bg-color); color: var(--text-color); font-family: Tahoma, Arial, sans-serif; padding: 20px; margin: 0; }
+        .container { max-width: var(--max-width); margin: 0 auto; background: var(--container-bg); border: 1px solid var(--border-color); padding: 15px; }
+        header { background: var(--header-bg); color: white; padding: 15px; margin-bottom: 15px; }
         h1 { margin: 0; font-size: 24px; }
         .back-link { display: inline-block; margin-bottom: 15px; color: #1a0dab; text-decoration: none; font-size: 14px; }
-        .back-link:hover { text-decoration: underline; }
-        .board-header { background: #3b5998; color: white; padding: 8px 12px; font-weight: bold; font-size: 14px; }
-        .thread-item { padding: 12px; border-bottom: 1px solid #ddd; }
+        body.dark-mode .back-link { color: #8ab4f8; }
+        .board-header { background: var(--sub-header); color: white; padding: 8px 12px; font-weight: bold; font-size: 14px; }
+        .thread-item { padding: 12px; border-bottom: 1px solid var(--border-color); }
         .thread-item a { color: #1a0dab; font-weight: bold; text-decoration: none; font-size: 15px; }
-        .thread-item a:hover { text-decoration: underline; }
+        body.dark-mode .thread-item a { color: #8ab4f8; }
+        .create-box { margin-top: 20px; padding: 15px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.02); }
+        input, textarea { padding: 6px; margin: 5px 0; width: 100%; box-sizing: border-box; }
+        button.action-btn { background: var(--header-bg); color: white; border: none; padding: 8px 12px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -33,51 +46,40 @@
         <div id="threads-list">
             <div style="padding: 15px; color: #666;">Loading threads...</div>
         </div>
+
+        <!-- Create New Thread Form -->
+        <div class="create-box">
+            <h3 style="margin-top:0;">Create a New Thread</h3>
+            <input type="text" id="thread-title" placeholder="Thread Title">
+            <textarea id="thread-content" rows="4" placeholder="First post content..."></textarea>
+            <button class="action-btn" onclick="createThread()">Post Thread</button>
+        </div>
     </div>
 
     <script>
-        // Your public Supabase credentials
         const SUPABASE_URL = 'https://goqyxiucsxzjfdxbdekp.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvcXl4aXVjc3h6amZkeGJkZWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0NTk2OTUsImV4cCI6MjEwMzAzNTY5NX0.3exRdGjsaOrPolFzYAlO-ytlfUHiTa9-SiodUFjtHIk';
 
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Get the category ID from the URL (?id=1)
+        if (localStorage.getItem('darkMode') === 'enabled') document.body.classList.add('dark-mode');
+        if (localStorage.getItem('wideMode') === 'enabled') document.body.classList.add('wide-mode');
+
         const urlParams = new URLSearchParams(window.location.search);
         const categoryId = urlParams.get('id');
 
         async function loadCategoryData() {
-            if (!categoryId) {
-                document.getElementById('cat-title').innerText = "Category Not Found";
-                return;
-            }
+            if (!categoryId) return;
 
-            // 1. Fetch category name
-            const { data: category } = await _supabase
-                .from('categories')
-                .select('*')
-                .eq('id', categoryId)
-                .single();
+            const { data: category } = await _supabase.from('categories').select('*').eq('id', categoryId).single();
+            if (category) document.getElementById('cat-title').innerText = '🐱 CatThread - ' + category.name;
 
-            if (category) {
-                document.getElementById('cat-title').innerText = '🐱 CatThread - ' + category.name;
-            }
-
-            // 2. Fetch threads belonging to this category
             const container = document.getElementById('threads-list');
-            const { data: threads, error } = await _supabase
-                .from('threads')
-                .select('*')
-                .eq('category_id', categoryId);
-
-            if (error) {
-                container.innerHTML = `<div style="padding: 15px; color: red;">Error loading threads: ${error.message}</div>`;
-                return;
-            }
+            const { data: threads } = await _supabase.from('threads').select('*').eq('category_id', categoryId);
 
             if (!threads || threads.length === 0) {
-                container.innerHTML = `<div style="padding: 15px; color: #666;">No threads in this board yet. Check back later or create one!</div>`;
+                container.innerHTML = `<div style="padding: 15px; color: #666;">No threads in this board yet. Create one below!</div>`;
                 return;
             }
 
@@ -90,6 +92,44 @@
                     </div>
                 `;
             });
+        }
+
+        async function createThread() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) {
+                alert('You must be logged in to create a thread!');
+                return;
+            }
+
+            const title = document.getElementById('thread-title').value.trim();
+            const content = document.getElementById('thread-content').value.trim();
+
+            if (!title || !content) {
+                alert('Please fill out both a title and content!');
+                return;
+            }
+
+            // Get user's unique username from profile table
+            const { data: profile } = await _supabase.from('profiles').select('username').eq('id', session.user.id).single();
+            const authorName = profile ? profile.username : 'User';
+
+            // Insert thread
+            const { data: newThread, error: threadError } = await _supabase
+                .from('threads')
+                .insert([{ category_id: categoryId, title, author_name: authorName }])
+                .select()
+                .single();
+
+            if (threadError) {
+                alert(threadError.message);
+                return;
+            }
+
+            // Insert initial post inside the thread
+            await _supabase.from('posts').insert([{ thread_id: newThread.id, content, author_name: authorName }]);
+
+            alert('Thread created successfully!');
+            location.reload();
         }
 
         loadCategoryData();
