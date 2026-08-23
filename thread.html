@@ -2,53 +2,170 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Thread - CatThread</title>
+    <title>CatThread - View Thread</title>
     <link rel="icon" type="image/png" href="icons/cat.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg-color: #f0f4f8; --container-bg: #ffffff; --text-color: #1a1a1a;
-            --border-color: #b0c4de; --header-bg: #3a75c4; --sub-header: #4a90e2;
+            --bg-color: #f0f4f8;
+            --container-bg: #ffffff;
+            --text-color: #1a1a1a;
+            --border-color: #b0c4de;
+            --header-bg: #3a75c4;
+            --sub-header: #4a90e2;
+            --max-width: 900px;
         }
+
         body.dark-mode {
-            --bg-color: #181c24; --container-bg: #222831; --text-color: #f5f6f8;
-            --border-color: #3f4e66; --header-bg: #2b6cb0; --sub-header: #3182ce;
+            --bg-color: #181c24;
+            --container-bg: #222831;
+            --text-color: #f5f6f8;
+            --border-color: #3f4e66;
+            --header-bg: #2b6cb0;
+            --sub-header: #3182ce;
         }
-        body { background-color: var(--bg-color); color: var(--text-color); font-family: Tahoma, sans-serif; padding: 20px; margin: 0; }
-        .container { max-width: 900px; margin: 0 auto; background-color: var(--container-bg); border: 2px solid var(--border-color); padding: 15px; box-sizing: border-box; }
-        header { background-color: var(--header-bg); color: white; padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-        h1 { margin: 0; font-size: 20px; }
-        a { color: #1e90ff; text-decoration: none; font-weight: bold; }
-        .post-box { padding: 15px; border: 1px solid var(--border-color); margin-bottom: 10px; background-color: var(--container-bg); }
-        .post-header { font-size: 12px; font-weight: bold; color: #555; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 8px; }
-        body.dark-mode .post-header { color: #b0bec5; }
-        textarea { padding: 8px; margin: 6px 0; width: 100%; box-sizing: border-box; background-color: var(--container-bg); color: var(--text-color); border: 1px solid var(--border-color); }
-        button { background-color: var(--header-bg); color: white; border: none; padding: 8px 12px; cursor: pointer; font-weight: bold; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: Tahoma, Arial, sans-serif;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            background-color: var(--container-bg);
+            border: 2px solid var(--border-color);
+            padding: 15px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        header {
+            background-color: var(--header-bg);
+            color: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 { margin: 0; font-size: 24px; }
+        .forum-icon { width: 20px; height: 20px; vertical-align: middle; object-fit: contain; }
+
+        .post-card {
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            margin-bottom: 10px;
+            background-color: var(--container-bg);
+        }
+
+        .post-author {
+            font-weight: bold;
+            font-size: 13px;
+            color: var(--sub-header);
+            margin-bottom: 5px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 8px;
+            box-sizing: border-box;
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            margin-top: 10px;
+        }
+
+        button.action-btn {
+            background-color: var(--header-bg);
+            color: white;
+            border: none;
+            padding: 9px 14px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        /* Sad Cat Error Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+            padding: 20px;
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .modal-content img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
+
+    <!-- Error Modal -->
+    <div class="modal-overlay" id="error-modal">
+        <div class="modal-content">
+            <img src="icons/sadcat.png" alt="Sad Cat">
+            <h3 style="margin: 5px 0 10px 0; color: #e53e3e;">Oops, an error occurred</h3>
+            <p id="error-message-text" style="font-size: 13px; margin-bottom: 15px;"></p>
+            <button class="action-btn" onclick="closeErrorModal()">Okay</button>
+        </div>
+    </div>
+
     <div class="container">
         <header>
-            <h1 id="thread-main-title">Loading Thread...</h1>
-            <a id="back-link" href="index.html" style="color:white;">Back</a>
+            <h1><a href="index.html" style="color:white; text-decoration:none;">CatThread</a></h1>
+            <div id="user-status" style="font-weight: bold;">Checking login...</div>
         </header>
 
-        <div id="thread-container"></div>
+        <div id="thread-view">
+            <h2 id="thread-title">Loading thread...</h2>
+            <div id="original-post" class="post-card"></div>
+        </div>
 
         <h3>Replies</h3>
-        <div id="replies-list"><div style="color:#777;">Loading replies...</div></div>
+        <div id="replies-list">
+            <p style="color: #777;">Loading replies...</p>
+        </div>
 
         <div id="reply-section" style="margin-top: 20px; display:none;">
-            <h3>Post a Reply</h3>
-            <textarea id="reply-content" rows="4" placeholder="Write your reply here..."></textarea>
-            <button onclick="postReply()">Submit Reply</button>
+            <h3>Leave a Reply</h3>
+            <textarea id="reply-content" placeholder="Write your reply here..."></textarea>
+            <button class="action-btn" onclick="submitReply()">Post Reply</button>
         </div>
-        <div id="login-prompt" style="margin-top: 15px; font-size: 13px; color: #777;">Log in on the home page to reply.</div>
+        <div id="login-prompt-reply" style="margin-top: 20px; font-weight: bold; color: #777;">
+            Please <a href="index.html">log in</a> on the main page to post a reply.
+        </div>
     </div>
 
     <script>
         const SUPABASE_URL = 'https://goqyxiucsxzjfdxbdekp.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvcXl4aXVjc3h6amZkeGJkZWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0NTk2OTUsImV4cCI6MjEwMzAzNTY5NX0.3exRdGjsaOrPolFzYAlO-ytlfUHiTa9-SiodUFjtHIk';
+
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -57,101 +174,107 @@
         const urlParams = new URLSearchParams(window.location.search);
         const threadId = urlParams.get('id');
 
-        async function loadThread() {
-            // Fetch the thread directly by ID without forcing a strict profile join that might fail
-            const { data: thread, error } = await _supabase.from('threads').select('*').eq('id', threadId).single();
-    
-            if (error || !thread) { 
-                console.error("Error loading thread:", error);
-                document.getElementById('thread-main-title').innerText = 'Thread not found'; 
-                return; 
-            }
-
-            document.getElementById('thread-main-title').innerText = thread.title;
-            document.getElementById('back-link').href = `category.html?id=${thread.category_id}`;
-
-            // Fetch author username separately to prevent join errors
-            let author = 'Anonymous';
-            if (thread.user_id) {
-                const { data: profile } = await _supabase.from('profiles').select('username').eq('id', thread.user_id).maybeSingle();
-        if (profile && profile.username) author = profile.username;
-            }
-
-            document.getElementById('thread-container').innerHTML = `
-                <div class="post-box" style="border-width: 2px;">
-                    <div class="post-header">Posted by ${author} on ${new Date(thread.created_at).toLocaleString()}</div>
-                    <div>${thread.content.replace(/\n/g, '<br>')}</div>
-                </div>
-            `;
-
-            loadReplies();
+        function showErrorModal(message) {
+            document.getElementById('error-message-text').innerText = message;
+            document.getElementById('error-modal').style.display = 'flex';
         }
 
-        async function loadReplies() {
-            const { data: replies } = await _supabase.from('replies').select('*, profiles(username)').eq('thread_id', threadId).order('created_at', { ascending: true });
-            const list = document.getElementById('replies-list');
+        function closeErrorModal() {
+            document.getElementById('error-modal').style.display = 'none';
+        }
 
-            if (!replies || replies.length === 0) {
-                list.innerHTML = '<div style="color:#777; margin-bottom: 15px;">No replies yet. Be the first to reply!</div>';
+        async function checkUserSession() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session) {
+                document.getElementById('reply-section').style.display = 'block';
+                document.getElementById('login-prompt-reply').style.display = 'none';
+                
+                const { data: profile } = await _supabase.from('profiles').select('username').eq('id', session.user.id).single();
+                const name = profile ? profile.username : session.user.email;
+                document.getElementById('user-status').innerText = `Logged in: ${name}`;
+            } else {
+                document.getElementById('user-status').innerText = 'Not logged in';
+            }
+        }
+
+        async function loadThreadData() {
+            if (!threadId) {
+                showErrorModal('No thread ID provided in the URL.');
                 return;
             }
 
-            list.innerHTML = '';
-            replies.forEach(r => {
-                const author = r.profiles ? r.profiles.username : 'Anonymous';
-                list.innerHTML += `
-                    <div class="post-box">
-                        <div class="post-header">Reply by ${author} on ${new Date(r.created_at).toLocaleString()}</div>
-                        <div>${r.content.replace(/\n/g, '<br>')}</div>
+            // Load replies from 'posts' table mapped to thread_id
+            const { data: replies, error } = await _supabase
+                .from('posts')
+                .select('*')
+                .eq('thread_id', threadId)
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                showErrorModal('Could not load replies: ' + error.message);
+                return;
+            }
+
+            const repliesContainer = document.getElementById('replies-list');
+            if (replies.length === 0) {
+                repliesContainer.innerHTML = '<p style="color: #777;">No replies yet. Be the first!</p>';
+                return;
+            }
+
+            repliesContainer.innerHTML = '';
+            replies.forEach(reply => {
+                repliesContainer.innerHTML += `
+                    <div class="post-card">
+                        <div class="post-author">${reply.author_name || 'Anonymous'}</div>
+                        <div>${reply.content}</div>
                     </div>
                 `;
             });
         }
 
-        async function checkAuth() {
+        async function submitReply() {
+            const content = document.getElementById('reply-content').value.trim();
+            if (!content) {
+                showErrorModal('Please type a message before posting your reply!');
+                return;
+            }
+
             const { data: { session } } = await _supabase.auth.getSession();
-            if (session) {
-                document.getElementById('reply-section').style.display = 'block';
-                document.getElementById('login-prompt').style.display = 'none';
+            if (!session) {
+                showErrorModal('You must be logged in to reply.');
+                return;
+            }
+
+            // Get current user's profile username to fill author_name column
+            const { data: profile } = await _supabase
+                .from('profiles')
+                .select('username')
+                .eq('id', session.user.id)
+                .single();
+
+            const authorName = profile ? profile.username : session.user.email;
+
+            // Insert into posts table matching your schema columns
+            const { error } = await _supabase
+                .from('posts')
+                .insert([
+                    { 
+                        thread_id: parseInt(threadId), 
+                        content: content, 
+                        author_name: authorName 
+                    }
+                ]);
+
+            if (error) {
+                showErrorModal('Error posting reply: ' + error.message);
+            } else {
+                document.getElementById('reply-content').value = '';
+                loadThreadData();
             }
         }
 
-        async function postReply(threadId, replyContent) {
-    const { data: { session } } = await _supabase.auth.getSession();
-    if (!session) {
-        alert("You must be logged in to reply!");
-        return;
-    }
-
-    // 1. Get the current user's username from your profiles table
-    const { data: profile } = await _supabase
-        .from('profiles')
-        .select('username')
-        .eq('id', session.user.id)
-        .single();
-
-    const authorName = profile ? profile.username : session.user.email;
-
-    // 2. Insert into the posts table using author_name
-    const { error } = await _supabase
-        .from('posts') // or whatever your replies table is named
-        .insert([
-            { 
-                thread_id: threadId, 
-                content: replyContent, 
-                author_name: authorName 
-            }
-        ]);
-
-    if (error) {
-        alert("Error posting reply: " + error.message);
-    } else {
-        location.reload(); // Refresh the page to see the new reply
-    }
-}
-
-        loadThread();
-        checkAuth();
+        checkUserSession();
+        loadThreadData();
     </script>
 </body>
 </html>
