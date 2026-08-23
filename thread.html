@@ -125,7 +125,7 @@
 </head>
 <body>
 
-    <!-- Error Modal -->
+    <!-- Error Modal with sadcat.png -->
     <div class="modal-overlay" id="error-modal">
         <div class="modal-content">
             <img src="icons/sadcat.png" alt="Sad Cat">
@@ -167,7 +167,9 @@
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        if (localStorage.getItem('darkMode') === 'enabled') document.body.classList.add('dark-mode');
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            document.body.classList.add('dark-mode');
+        }
 
         const urlParams = new URLSearchParams(window.location.search);
         const threadId = urlParams.get('id');
@@ -181,60 +183,61 @@
             document.getElementById('error-modal').style.display = 'none';
         }
 
-        async function checkUserSession() {
+        async function initPage() {
             try {
-                const { data: { session } } = await _supabase.auth.getSession();
+                // 1. Check user login status
+                const { data: { session }, error: sessionError } = await _supabase.auth.getSession();
+                if (sessionError) throw sessionError;
+
                 if (session) {
                     document.getElementById('reply-section').style.display = 'block';
                     document.getElementById('login-prompt-reply').style.display = 'none';
                     
-                    const { data: profile } = await _supabase.from('profiles').select('username').eq('id', session.user.id).single();
+                    const { data: profile } = await _supabase.from('profiles').select('username').eq('id', session.user.id).maybeSingle();
                     const name = profile && profile.username ? profile.username : session.user.email;
                     document.getElementById('user-status').innerText = `Logged in: ${name}`;
                 } else {
                     document.getElementById('user-status').innerText = 'Not logged in';
                 }
+
+                // 2. Load thread replies
+                const repliesContainer = document.getElementById('replies-list');
+                if (!threadId) {
+                    repliesContainer.innerHTML = '<p style="color: #777;">No thread ID specified in URL.</p>';
+                    return;
+                }
+
+                const { data: replies, error: repliesError } = await _supabase
+                    .from('posts')
+                    .select('*')
+                    .eq('thread_id', threadId)
+                    .order('created_at', { ascending: true });
+
+                if (repliesError) {
+                    showErrorModal('Could not load replies: ' + repliesError.message);
+                    repliesContainer.innerHTML = '<p style="color: red;">Error loading replies.</p>';
+                    return;
+                }
+
+                if (!replies || replies.length === 0) {
+                    repliesContainer.innerHTML = '<p style="color: #777;">No replies yet. Be the first!</p>';
+                    return;
+                }
+
+                repliesContainer.innerHTML = '';
+                replies.forEach(reply => {
+                    repliesContainer.innerHTML += `
+                        <div class="post-card">
+                            <div class="post-author">${reply.author_name || 'Anonymous'}</div>
+                            <div>${reply.content}</div>
+                        </div>
+                    `;
+                });
+
             } catch (err) {
-                console.error("Session check error:", err);
-                document.getElementById('user-status').innerText = 'Not logged in';
+                console.error("Initialization error:", err);
+                showErrorModal('An unexpected error occurred while loading the page.');
             }
-        }
-
-        async function loadThreadData() {
-            const repliesContainer = document.getElementById('replies-list');
-            
-            if (!threadId) {
-                repliesContainer.innerHTML = '<p style="color: #777;">No thread selected. Please go back and select a thread.</p>';
-                return;
-            }
-
-            // NOTE: If your table name is not 'posts', change 'posts' below to your exact table name (e.g. 'replies')
-            const { data: replies, error } = await _supabase
-                .from('posts')
-                .select('*')
-                .eq('thread_id', threadId)
-                .order('created_at', { ascending: true });
-
-            if (error) {
-                showErrorModal('Could not load replies: ' + error.message);
-                repliesContainer.innerHTML = '<p style="color: red;">Error loading replies.</p>';
-                return;
-            }
-
-            if (!replies || replies.length === 0) {
-                repliesContainer.innerHTML = '<p style="color: #777;">No replies yet. Be the first!</p>';
-                return;
-            }
-
-            repliesContainer.innerHTML = '';
-            replies.forEach(reply => {
-                repliesContainer.innerHTML += `
-                    <div class="post-card">
-                        <div class="post-author">${reply.author_name || 'Anonymous'}</div>
-                        <div>${reply.content}</div>
-                    </div>
-                `;
-            });
         }
 
         async function submitReply() {
@@ -244,8 +247,8 @@
                 return;
             }
 
-            const { data: { session } } = await _supabase.auth.getSession();
-            if (!session) {
+            const { data: { session }, error: sessionError } = await _supabase.auth.getSession();
+            if (sessionError || !session) {
                 showErrorModal('You must be logged in to reply.');
                 return;
             }
@@ -254,12 +257,11 @@
                 .from('profiles')
                 .select('username')
                 .eq('id', session.user.id)
-                .single();
+                .maybeSingle();
 
             const authorName = profile && profile.username ? profile.username : session.user.email;
 
-            // Insert into your posts table
-            const { error } = await _supabase
+            const { error: insertError } = await _supabase
                 .from('posts')
                 .insert([
                     { 
@@ -269,17 +271,16 @@
                     }
                 ]);
 
-            if (error) {
-                showErrorModal('Error posting reply: ' + error.message);
+            if (insertError) {
+                showErrorModal('Error posting reply: ' + insertError.message);
             } else {
                 document.getElementById('reply-content').value = '';
-                loadThreadData();
+                initPage(); // Reload replies
             }
         }
 
-        // Initialize page execution safely
-        checkUserSession();
-        loadThreadData();
+        // Run on load
+        initPage();
     </script>
 </body>
 </html>
