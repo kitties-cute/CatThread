@@ -175,6 +175,51 @@
             cursor: pointer;
             font-weight: bold;
         }
+
+        /* Compliant Google Brand Identity Button */
+        .google-signin-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: #4285F4;
+            color: white;
+            border: 1px solid #357ae8;
+            border-radius: 2px;
+            padding: 0;
+            font-family: 'Roboto', Arial, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+            text-align: left;
+            overflow: hidden;
+            transition: background-color 0.2s;
+            text-decoration: none;
+        }
+
+        .google-signin-btn:hover {
+            background-color: #357ae8;
+        }
+
+        .google-icon-wrapper {
+            background-color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 2px 0 0 2px;
+        }
+
+        .google-signin-btn .forum-icon {
+            width: 18px;
+            height: 18px;
+        }
+
+        .google-button-text {
+            padding: 0 14px;
+            line-height: 38px;
+            letter-spacing: 0.2px;
+        }
     </style>
 </head>
 <body>
@@ -214,12 +259,16 @@
                 <input type="text" id="username" placeholder="Unique Username (Required for signup)">
                 <input type="email" id="email" placeholder="Email Address">
                 <input type="password" id="password" placeholder="Password">
-                <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; align-items: center;">
                     <button class="action-btn" onclick="signUpWithEmail()">Sign Up</button>
                     <button class="action-btn" onclick="loginWithEmail()">Log In</button>
-                    <button class="action-btn" style="background: #ff4d4d; display: inline-flex; align-items: center; gap: 8px;" onclick="loginWithGoogle()">
-                        <img src="icons/google.png" alt="Google" class="forum-icon" id="icon-google" style="width: 16px; height: 16px;">
-                        Sign in with Google
+                    
+                    <!-- Updated Compliant Google Sign-In Button -->
+                    <button type="button" class="google-signin-btn" onclick="loginWithGoogle()">
+                        <div class="google-icon-wrapper">
+                            <img src="icons/google.png" alt="Google G" class="forum-icon" id="icon-google">
+                        </div>
+                        <span class="google-button-text">Sign in with Google</span>
                     </button>
                 </div>
             </div>
