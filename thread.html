@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Thread - CatThread</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-color: #f0f4f8; --container-bg: #ffffff; --text-color: #1a1a1a;
+            --border-color: #b0c4de; --header-bg: #3a75c4; --sub-header: #4a90e2;
+        }
+        body.dark-mode {
+            --bg-color: #181c24; --container-bg: #222831; --text-color: #f5f6f8;
+            --border-color: #3f4e66; --header-bg: #2b6cb0; --sub-header: #3182ce;
+        }
+        body { background-color: var(--bg-color); color: var(--text-color); font-family: Tahoma, sans-serif; padding: 20px; margin: 0; }
+        .container { max-width: 900px; margin: 0 auto; background-color: var(--container-bg); border: 2px solid var(--border-color); padding: 15px; box-sizing: border-box; }
+        header { background-color: var(--header-bg); color: white; padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { margin: 0; font-size: 20px; }
+        a { color: #1e90ff; text-decoration: none; font-weight: bold; }
+        .post-box { padding: 15px; border: 1px solid var(--border-color); margin-bottom: 10px; background-color: var(--container-bg); }
+        .post-header { font-size: 12px; font-weight: bold; color: #555; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 8px; }
+        body.dark-mode .post-header { color: #b0bec5; }
+        textarea { padding: 8px; margin: 6px 0; width: 100%; box-sizing: border-box; background-color: var(--container-bg); color: var(--text-color); border: 1px solid var(--border-color); }
+        button { background-color: var(--header-bg); color: white; border: none; padding: 8px 12px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 id="thread-main-title">Loading Thread...</h1>
+            <a id="back-link" href="index.html" style="color:white;">Back</a>
+        </header>
+
+        <div id="thread-container"></div>
+
+        <h3>Replies</h3>
+        <div id="replies-list"><div style="color:#777;">Loading replies...</div></div>
+
+        <div id="reply-section" style="margin-top: 20px; display:none;">
+            <h3>Post a Reply</h3>
+            <textarea id="reply-content" rows="4" placeholder="Write your reply here..."></textarea>
+            <button onclick="postReply()">Submit Reply</button>
+        </div>
+        <div id="login-prompt" style="margin-top: 15px; font-size: 13px; color: #777;">Log in on the home page to reply.</div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://goqyxiucsxzjfdxbdekp.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvcXl4aXVjc3h6amZkeGJkZWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0NTk2OTUsImV4cCI6MjEwMzAzNTY5NX0.3exRdGjsaOrPolFzYAlO-ytlfUHiTa9-SiodUFjtHIk';
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        if (localStorage.getItem('darkMode') === 'enabled') document.body.classList.add('dark-mode');
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const threadId = urlParams.get('id');
+
+        async function loadThread() {
+            // Load main thread
+            const { data: thread } = await _supabase.from('threads').select('*, profiles(username)').eq('id', threadId).single();
+            if (!thread) { document.getElementById('thread-main-title').innerText = 'Thread not found'; return; }
+
+            document.getElementById('thread-main-title').innerText = thread.title;
+            document.getElementById('back-link').href = `category.html?id=${thread.category_id}`;
+
+            const author = thread.profiles ? thread.profiles.username : 'Anonymous';
+            document.getElementById('thread-container').innerHTML = `
+                <div class="post-box" style="border-width: 2px;">
+                    <div class="post-header">Posted by ${author} on ${new Date(thread.created_at).toLocaleString()}</div>
+                    <div>${thread.content.replace(/\n/g, '<br>')}</div>
+                </div>
+            `;
+
+            // Load replies (assuming you have a 'replies' table linked to thread_id)
+            loadReplies();
+        }
+
+        async function loadReplies() {
+            const { data: replies } = await _supabase.from('replies').select('*, profiles(username)').eq('thread_id', threadId).order('created_at', { ascending: true });
+            const list = document.getElementById('replies-list');
+
+            if (!replies || replies.length === 0) {
+                list.innerHTML = '<div style="color:#777; margin-bottom: 15px;">No replies yet. Be the first to reply!</div>';
+                return;
+            }
+
+            list.innerHTML = '';
+            replies.forEach(r => {
+                const author = r.profiles ? r.profiles.username : 'Anonymous';
+                list.innerHTML += `
+                    <div class="post-box">
+                        <div class="post-header">Reply by ${author} on ${new Date(r.created_at).toLocaleString()}</div>
+                        <div>${r.content.replace(/\n/g, '<br>')}</div>
+                    </div>
+                `;
+            });
+        }
+
+        async function checkAuth() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session) {
+                document.getElementById('reply-section').style.display = 'block';
+                document.getElementById('login-prompt').style.display = 'none';
+            }
+        }
+
+        async function postReply() {
+            const content = document.getElementById('reply-content').value.trim();
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!content) { alert('Reply cannot be empty.'); return; }
+
+            const { error } = await _supabase.from('replies').insert([{
+                thread_id: threadId,
+                content: content,
+                user_id: session.user.id
+            }]);
+
+            if (error) alert('Error: ' + error.message);
+            else {
+                document.getElementById('reply-content').value = '';
+                loadReplies();
+            }
+        }
+
+        loadThread();
+        checkAuth();
+    </script>
+</body>
+</html>
