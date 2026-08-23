@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Category - CatThread</title>
-    <link rel="icon" href="/favicon.ico" type="icons/cat.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -60,7 +59,7 @@
             const { data: cat } = await _supabase.from('categories').select('*').eq('id', categoryId).single();
             if (cat) document.getElementById('category-title').innerText = `Folder: ${cat.name}`;
 
-            const { data: threads } = await _supabase.from('threads').select('*, profiles(username)').eq('category_id', categoryId).order('created_at', { ascending: false });
+            const { data: threads } = await _supabase.from('threads').select('*').eq('category_id', categoryId).order('created_at', { ascending: false });
             const list = document.getElementById('threads-list');
             
             if (!threads || threads.length === 0) {
@@ -69,17 +68,22 @@
             }
 
             list.innerHTML = '';
-            threads.forEach(t => {
-                const author = t.profiles ? t.profiles.username : 'Anonymous';
+            for (let t of threads) {
+                let author = 'Anonymous';
+                if (t.user_id) {
+                    const { data: profile } = await _supabase.from('profiles').select('username').eq('id', t.user_id).maybeSingle();
+                    if (profile && profile.username) author = profile.username;
+                }
+
                 list.innerHTML += `
                     <div class="thread-item">
                         <div>
                             <a href="thread.html?id=${t.id}">${t.title}</a>
-                            <div style="font-size: 11px; color: #777; margin-top: 3px;">Started by ${author}</div>
+                            <div style="font-size: 11px; color: #777; margin-top: 3px;">Started by ${author} on ${new Date(t.created_at).toLocaleString()}</div>
                         </div>
                     </div>
                 `;
-            });
+            }
         }
 
         async function checkAuth() {
@@ -95,17 +99,35 @@
             const content = document.getElementById('thread-content').value.trim();
             const { data: { session } } = await _supabase.auth.getSession();
 
-            if (!title || !content) { alert('Please fill in both fields.'); return; }
+            if (!session) {
+                alert('You must be logged in to create a thread.');
+                return;
+            }
+
+            if (!title || !content) { 
+                alert('Please fill in both fields.'); 
+                return; 
+            }
 
             const { data, error } = await _supabase.from('threads').insert([{
                 category_id: categoryId,
                 title: title,
                 content: content,
                 user_id: session.user.id
-            }]).select().single();
+            }]).select();
 
-            if (error) alert('Error: ' + error.message);
-            else { window.location.href = `thread.html?id=${data.id}`; }
+            if (error) {
+                console.error('Error posting thread:', error);
+                alert('Error: ' + error.message);
+                return;
+            }
+
+            if (data && data.length > 0) {
+                window.location.href = `thread.html?id=${data[0].id}`;
+            } else {
+                alert('Thread posted successfully!');
+                window.location.reload();
+            }
         }
 
         loadCategoryData();
