@@ -95,8 +95,8 @@
         }
 
         .forum-icon {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             vertical-align: middle;
             object-fit: contain;
         }
@@ -126,6 +126,12 @@
             padding: 14px 12px;
             border-bottom: 1px solid var(--border-color);
             align-items: center;
+        }
+
+        .category-item-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .category-item a {
@@ -242,7 +248,10 @@
 
     <div class="container">
         <header>
-            <h1>CatThread</h1>
+            <h1>
+                <img src="https://api.iconify.design/fluent-emoji:cat-face.svg" alt="Cat Icon" class="forum-icon">
+                CatThread
+            </h1>
             <div id="user-status" style="font-weight: bold;">Not logged in</div>
         </header>
 
@@ -335,9 +344,12 @@
             categories.forEach(cat => {
                 container.innerHTML += `
                     <div class="category-item">
-                        <div>
-                            <a href="category.html?id=${cat.id}">${cat.name}</a>
-                            <p class="category-desc">${cat.description || ''}</p>
+                        <div class="category-item-left">
+                            <img src="https://api.iconify.design/fluent-emoji:speech-balloon.svg" alt="Board Icon" class="forum-icon">
+                            <div>
+                                <a href="category.html?id=${cat.id}">${cat.name}</a>
+                                <p class="category-desc">${cat.description || ''}</p>
+                            </div>
                         </div>
                         <div style="font-size:12px; font-weight:bold;">Active Board</div>
                     </div>
@@ -353,7 +365,6 @@
             if (!username) { alert('Please enter a unique username!'); return; }
             if (!email || !password) { alert('Please enter both email and password!'); return; }
 
-            // Check if username is already taken
             const { data: existing } = await _supabase.from('profiles').select('username').eq('username', username).maybeSingle();
             if (existing) {
                 alert('That username is already taken! Choose another.');
@@ -403,7 +414,6 @@
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) return;
 
-            // Check if taken
             const { data: existing } = await _supabase.from('profiles').select('username').eq('username', username).maybeSingle();
             if (existing) {
                 alert('That username is already taken! Choose another.');
@@ -426,11 +436,9 @@
         async function checkUser() {
             const { data: { session } } = await _supabase.auth.getSession();
             if (session) {
-                // Check if user has a profile/username set
                 const { data: profile } = await _supabase.from('profiles').select('username').eq('id', session.user.id).maybeSingle();
                 
                 if (!profile) {
-                    // Google user logged in but hasn't picked a username yet
                     document.getElementById('auth-forms').style.display = 'none';
                     document.getElementById('username-setup-panel').style.display = 'block';
                 } else {
