@@ -6,227 +6,109 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg-color: #f0f4f8;
-            --container-bg: #ffffff;
-            --text-color: #1a1a1a;
-            --border-color: #b0c4de;
-            --header-bg: #3a75c4;
-            --sub-header: #4a90e2;
-            --max-width: 900px;
+            --bg-color: #f0f4f8; --container-bg: #ffffff; --text-color: #1a1a1a;
+            --border-color: #b0c4de; --header-bg: #3a75c4; --sub-header: #4a90e2;
         }
-
         body.dark-mode {
-            --bg-color: #181c24;
-            --container-bg: #222831;
-            --text-color: #f5f6f8;
-            --border-color: #3f4e66;
-            --header-bg: #2b6cb0;
-            --sub-header: #3182ce;
+            --bg-color: #181c24; --container-bg: #222831; --text-color: #f5f6f8;
+            --border-color: #3f4e66; --header-bg: #2b6cb0; --sub-header: #3182ce;
         }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: Tahoma, Arial, sans-serif;
-            padding: 20px;
-            margin: 0;
-        }
-
-        .container {
-            max-width: var(--max-width);
-            margin: 0 auto;
-            background-color: var(--container-bg);
-            border: 2px solid var(--border-color);
-            padding: 15px;
-            box-sizing: border-box;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        header {
-            background-color: var(--header-bg);
-            color: white;
-            padding: 15px;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        header a { color: white; text-decoration: none; font-weight: bold; }
-
-        .board-header {
-            background-color: var(--sub-header);
-            color: white;
-            padding: 10px 12px;
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 15px;
-        }
-
-        .thread-item {
-            padding: 12px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .thread-title {
-            color: #1e90ff;
-            font-weight: bold;
-            text-decoration: none;
-            font-size: 16px;
-        }
-
-        body.dark-mode .thread-title { color: #63b3ed; }
-
-        .thread-meta {
-            font-size: 11px;
-            color: #777;
-            margin-top: 4px;
-        }
-
-        .post-box {
-            margin-top: 25px;
-            padding: 15px;
-            border: 1px solid var(--border-color);
-            background-color: var(--container-bg);
-        }
-
-        input {
-            padding: 8px;
-            margin: 6px 0;
-            width: 100%;
-            box-sizing: border-box;
-            background-color: var(--container-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            font-family: inherit;
-        }
-
-        button.action-btn {
-            background-color: var(--header-bg);
-            color: white;
-            border: none;
-            padding: 9px 14px;
-            cursor: pointer;
-            font-weight: bold;
-        }
+        body { background-color: var(--bg-color); color: var(--text-color); font-family: Tahoma, sans-serif; padding: 20px; margin: 0; }
+        .container { max-width: 900px; margin: 0 auto; background-color: var(--container-bg); border: 2px solid var(--border-color); padding: 15px; box-sizing: border-box; }
+        header { background-color: var(--header-bg); color: white; padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { margin: 0; font-size: 20px; }
+        a { color: #1e90ff; text-decoration: none; font-weight: bold; }
+        .board-header { background-color: var(--sub-header); color: white; padding: 10px 12px; font-weight: bold; }
+        .thread-item { padding: 12px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .new-thread-box { margin-top: 20px; padding: 15px; border: 1px solid var(--border-color); }
+        input, textarea { padding: 8px; margin: 6px 0; width: 100%; box-sizing: border-box; background-color: var(--container-bg); color: var(--text-color); border: 1px solid var(--border-color); }
+        button { background-color: var(--header-bg); color: white; border: none; padding: 8px 12px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
-
     <div class="container">
         <header>
-            <h1 id="category-name" style="margin:0; font-size:20px;">Loading Board...</h1>
-            <a href="index.html">&larr; Back to Home</a>
+            <h1 id="category-title">Loading Folder...</h1>
+            <a href="index.html" style="color:white;">Back to Home</a>
         </header>
 
-        <div class="board-header" id="board-title-bar">Threads</div>
+        <div class="board-header">Threads in this Folder</div>
+        <div id="threads-list"><div style="padding: 15px; color:#777;">Loading threads...</div></div>
 
-        <div id="threads-list">
-            <div style="padding: 15px; color: #777;">Loading discussions...</div>
-        </div>
-
-        <div class="post-box" id="new-thread-section" style="display:none;">
-            <h3 style="margin-top:0;">Create a New Discussion</h3>
+        <div class="new-thread-box" id="new-thread-section" style="display:none;">
+            <h3>Create New Thread</h3>
             <input type="text" id="thread-title" placeholder="Thread Title">
-            <button class="action-btn" onclick="createThread()">Post Thread</button>
+            <textarea id="thread-content" rows="4" placeholder="Initial post content..."></textarea>
+            <button onclick="createThread()">Publish Thread</button>
         </div>
-
-        <div id="login-prompt" style="margin-top: 20px; padding: 15px; border: 1px solid var(--border-color); text-align: center; display:none;">
-            <p>You must be logged in with a username to create a thread.</p>
-            <a href="index.html" style="color: #1e90ff; font-weight: bold;">Go to Home to Log In</a>
-        </div>
+        <div id="login-prompt" style="margin-top: 15px; font-size: 13px; color: #777;">Log in on the home page to create a thread.</div>
     </div>
 
     <script>
         const SUPABASE_URL = 'https://goqyxiucsxzjfdxbdekp.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvcXl4aXVjc3h6amZkeGJkZWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0NTk2OTUsImV4cCI6MjEwMzAzNTY5NX0.3exRdGjsaOrPolFzYAlO-ytlfUHiTa9-SiodUFjtHIk';
-
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        if (localStorage.getItem('darkMode') === 'enabled') {
-            document.body.classList.add('dark-mode');
-        }
+        if (localStorage.getItem('darkMode') === 'enabled') document.body.classList.add('dark-mode');
 
         const urlParams = new URLSearchParams(window.location.search);
         const categoryId = urlParams.get('id');
-        let currentUsername = '';
 
-        async function loadCategoryDetails() {
-            if (!categoryId) return;
-            const { data } = await _supabase.from('categories').select('*').eq('id', categoryId).single();
-            if (data) {
-                document.getElementById('category-name').innerText = data.name;
-                document.getElementById('board-title-bar').innerText = `${data.name} - Discussions`;
-            }
-        }
+        async function loadCategoryData() {
+            const { data: cat } = await _supabase.from('categories').select('*').eq('id', categoryId).single();
+            if (cat) document.getElementById('category-title').innerText = `Folder: ${cat.name}`;
 
-        async function loadThreads() {
-            if (!categoryId) return;
-            const container = document.getElementById('threads-list');
+            const { data: threads } = await _supabase.from('threads').select('*, profiles(username)').eq('category_id', categoryId).order('created_at', { ascending: false });
+            const list = document.getElementById('threads-list');
             
-            const { data: threads, error } = await _supabase
-                .from('threads')
-                .select('*')
-                .eq('category_id', categoryId)
-                .order('created_at', { ascending: false });
-
-            if (error || !threads || threads.length === 0) {
-                container.innerHTML = `<div style="padding: 15px; color: #777;">No threads here yet. Be the first to post below!</div>`;
+            if (!threads || threads.length === 0) {
+                list.innerHTML = '<div style="padding: 15px; color:#777;">No threads in this folder yet. Be the first!</div>';
                 return;
             }
 
-            container.innerHTML = '';
-            threads.forEach(thread => {
-                container.innerHTML += `
+            list.innerHTML = '';
+            threads.forEach(t => {
+                const author = t.profiles ? t.profiles.username : 'Anonymous';
+                list.innerHTML += `
                     <div class="thread-item">
-                        <div class="thread-title">${escapeHtml(thread.title)}</div>
-                        <div class="thread-meta">Posted by <b>${escapeHtml(thread.author_name || 'Anonymous')}</b> on ${new Date(thread.created_at).toLocaleDateString()}</div>
+                        <div>
+                            <a href="thread.html?id=${t.id}">${t.title}</a>
+                            <div style="font-size: 11px; color: #777; margin-top: 3px;">Started by ${author}</div>
+                        </div>
                     </div>
                 `;
             });
         }
 
-        async function checkAuthStatus() {
+        async function checkAuth() {
             const { data: { session } } = await _supabase.auth.getSession();
             if (session) {
-                const { data: profile } = await _supabase.from('profiles').select('username').eq('id', session.user.id).maybeSingle();
-                if (profile) {
-                    currentUsername = profile.username;
-                    document.getElementById('new-thread-section').style.display = 'block';
-                } else {
-                    document.getElementById('login-prompt').style.display = 'block';
-                }
-            } else {
-                document.getElementById('login-prompt').style.display = 'block';
+                document.getElementById('new-thread-section').style.display = 'block';
+                document.getElementById('login-prompt').style.display = 'none';
             }
         }
 
         async function createThread() {
             const title = document.getElementById('thread-title').value.trim();
-            if (!title) { alert('Please enter a thread title!'); return; }
+            const content = document.getElementById('thread-content').value.trim();
+            const { data: { session } } = await _supabase.auth.getSession();
 
-            const { error } = await _supabase.from('threads').insert([{
+            if (!title || !content) { alert('Please fill in both fields.'); return; }
+
+            const { data, error } = await _supabase.from('threads').insert([{
                 category_id: categoryId,
                 title: title,
-                author_name: currentUsername
-            }]);
+                content: content,
+                user_id: session.user.id
+            }]).select().single();
 
-            if (error) {
-                alert(error.message);
-            } else {
-                document.getElementById('thread-title').value = '';
-                loadThreads();
-            }
+            if (error) alert('Error: ' + error.message);
+            else { window.location.href = `thread.html?id=${data.id}`; }
         }
 
-        function escapeHtml(str) {
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
-
-        loadCategoryDetails();
-        loadThreads();
-        checkAuthStatus();
+        loadCategoryData();
+        checkAuth();
     </script>
 </body>
 </html>
