@@ -227,7 +227,8 @@
             document.getElementById('error-modal').style.display = 'none';
         }
 
-        async function getAuthorName(userId) {
+        async function getUsernameById(userId) {
+            if (!userId) return null;
             try {
                 const { data: profile } = await _supabase
                     .from('profiles')
@@ -241,7 +242,7 @@
             } catch (e) {
                 console.error("Could not fetch profile username", e);
             }
-            return 'Anonymous';
+            return null;
         }
 
         async function initPage() {
@@ -257,7 +258,7 @@
                     document.getElementById('reply-section').style.display = 'block';
                     document.getElementById('login-prompt-reply').style.display = 'none';
                     
-                    const username = await getAuthorName(session.user.id);
+                    const username = (await getUsernameById(session.user.id)) || 'Anonymous';
                     document.getElementById('user-status').innerText = `Logged in: ${username}`;
                 } else {
                     document.getElementById('user-status').innerText = 'Not logged in';
@@ -274,8 +275,14 @@
                 if (threadError || !threadData) {
                     threadContainer.innerHTML = '<p style="padding: 10px; color: red;">Could not load thread details.</p>';
                 } else {
-                    // Check multiple field names to prevent "Anonymous" from showing if data exists in alternate columns
-                    const threadAuthor = threadData.author_name || threadData.username || threadData.user_name || threadData.email || 'Anonymous';
+                    // Try to resolve the username using user_id, fallback to existing author fields if present
+                    let threadAuthor = threadData.author_name || threadData.username || threadData.user_name;
+                    
+                    if (!threadAuthor && threadData.user_id) {
+                        threadAuthor = await getUsernameById(threadData.user_id);
+                    }
+                    
+                    threadAuthor = threadAuthor || 'Anonymous';
 
                     threadContainer.innerHTML = `
                         <div class="main-thread-box">
@@ -334,7 +341,7 @@
                 return;
             }
 
-            const authorName = await getAuthorName(session.user.id);
+            const authorName = (await getUsernameById(session.user.id)) || 'Anonymous';
 
             const { error: insertError } = await _supabase
                 .from('posts')
