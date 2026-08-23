@@ -62,6 +62,13 @@
             background-color: var(--container-bg);
         }
 
+        .main-thread-box {
+            background-color: var(--announcement-bg, #e6f0fa);
+            border: 2px solid var(--sub-header);
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
         .post-author {
             font-weight: bold;
             font-size: 13px;
@@ -141,8 +148,9 @@
             <div id="user-status" style="font-weight: bold;">Checking login...</div>
         </header>
 
-        <div id="thread-view">
-            <h2 id="thread-title">Discussion Thread</h2>
+        <!-- Main Thread Container -->
+        <div id="thread-container">
+            <p style="color: #777;">Loading thread...</p>
         </div>
 
         <h3>Replies</h3>
@@ -185,10 +193,13 @@
 
         async function initPage() {
             try {
-                // 1. Check user login status
-                const { data: { session }, error: sessionError } = await _supabase.auth.getSession();
-                if (sessionError) throw sessionError;
+                if (!threadId) {
+                    document.getElementById('thread-container').innerHTML = '<p style="color: red;">No thread ID specified in URL.</p>';
+                    return;
+                }
 
+                // 1. Check user session
+                const { data: { session } } = await _supabase.auth.getSession();
                 if (session) {
                     document.getElementById('reply-section').style.display = 'block';
                     document.getElementById('login-prompt-reply').style.display = 'none';
@@ -200,13 +211,28 @@
                     document.getElementById('user-status').innerText = 'Not logged in';
                 }
 
-                // 2. Load thread replies
-                const repliesContainer = document.getElementById('replies-list');
-                if (!threadId) {
-                    repliesContainer.innerHTML = '<p style="color: #777;">No thread ID specified in URL.</p>';
-                    return;
+                // 2. Load the main thread details (Change 'threads' below if your table has a different name)
+                const { data: threadData, error: threadError } = await _supabase
+                    .from('threads') 
+                    .select('*')
+                    .eq('id', threadId)
+                    .single();
+
+                const threadContainer = document.getElementById('thread-container');
+                if (threadError || !threadData) {
+                    threadContainer.innerHTML = '<p style="color: red;">Could not load thread details.</p>';
+                } else {
+                    threadContainer.innerHTML = `
+                        <div class="main-thread-box">
+                            <h2>${threadData.title}</h2>
+                            <div class="post-author">Posted by: ${threadData.author_name || 'Anonymous'}</div>
+                            <p>${threadData.content || threadData.body || ''}</p>
+                        </div>
+                    `;
                 }
 
+                // 3. Load replies
+                const repliesContainer = document.getElementById('replies-list');
                 const { data: replies, error: repliesError } = await _supabase
                     .from('posts')
                     .select('*')
@@ -247,8 +273,8 @@
                 return;
             }
 
-            const { data: { session }, error: sessionError } = await _supabase.auth.getSession();
-            if (sessionError || !session) {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) {
                 showErrorModal('You must be logged in to reply.');
                 return;
             }
@@ -275,11 +301,10 @@
                 showErrorModal('Error posting reply: ' + insertError.message);
             } else {
                 document.getElementById('reply-content').value = '';
-                initPage(); // Reload replies
+                initPage(); // Refresh thread & replies
             }
         }
 
-        // Run on load
         initPage();
     </script>
 </body>
