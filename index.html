@@ -376,7 +376,6 @@
             if (error) { alert(error.message); } else { location.reload(); }
         }
 
-        // Clean Supabase OAuth login handler for Google
         async function loginWithGoogle() {
             const { error } = await _supabase.auth.signInWithOAuth({
                 provider: 'google'
