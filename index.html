@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>CatThread</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         :root {
             --bg-color: #f0f4f8;
@@ -275,16 +274,8 @@
                     <button class="action-btn" onclick="signUpWithEmail()">Sign Up</button>
                     <button class="action-btn" onclick="loginWithEmail()">Log In</button>
                     
-                    <!-- Official Google Client ID hook -->
-                    <div id="g_id_onload"
-                         data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
-                         data-callback="handleGoogleSignIn"
-                         data-auto_prompt="false"
-                         style="display:none;">
-                    </div>
-
-                    <!-- Official Google Pre-Approved Button Markup -->
-                    <button type="button" class="gsi-material-button" onclick="triggerGoogleSDKPrompt()">
+                    <!-- Official Google Pre-Approved Button Markup connected to Supabase OAuth -->
+                    <button type="button" class="gsi-material-button" onclick="loginWithGoogle()">
                       <div class="gsi-material-button-state"></div>
                       <div class="gsi-material-button-content-wrapper" style="display: flex; align-items: center;">
                         <div class="gsi-material-button-icon">
@@ -332,16 +323,6 @@
             document.body.classList.toggle('wide-mode');
             localStorage.setItem('wideMode', document.body.classList.contains('wide-mode') ? 'enabled' : 'disabled');
         }
-
-        // Initialize Google Identity Services on load
-        window.onload = function () {
-            if (typeof google !== 'undefined') {
-                google.accounts.id.initialize({
-                    client_id: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
-                    callback: handleGoogleSignIn
-                });
-            }
-        };
 
         async function loadCategories() {
             const container = document.getElementById('categories-list');
@@ -395,38 +376,13 @@
             if (error) { alert(error.message); } else { location.reload(); }
         }
 
-        // Trigger Google SDK prompt when the custom markup button is clicked
-        function triggerGoogleSDKPrompt() {
-            if (typeof google !== 'undefined' && google.accounts) {
-                google.accounts.id.prompt((notification) => {
-                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                        const client = google.accounts.oauth2.initTokenClient({
-                            client_id: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
-                            scope: "email profile openid",
-                            callback: async (tokenResponse) => {
-                                if (tokenResponse && tokenResponse.access_token) {
-                                    location.reload();
-                                }
-                            }
-                        });
-                        client.requestAccessToken();
-                    }
-                });
-            } else {
-                alert('Google Sign-In library is still loading. Please try again.');
-            }
-        }
-
-        // Handles the token response from the Google SDK and exchanges it via Supabase
-        async function handleGoogleSignIn(response) {
-            const { data, error } = await _supabase.auth.signInWithIdToken({
-                provider: 'google',
-                token: response.credential,
+        // Clean Supabase OAuth login handler for Google
+        async function loginWithGoogle() {
+            const { error } = await _supabase.auth.signInWithOAuth({
+                provider: 'google'
             });
             if (error) {
                 alert(error.message);
-            } else {
-                location.reload();
             }
         }
 
