@@ -7,9 +7,9 @@
     <style>
         :root {
             --bg-color: #eef2f5;
-            --container-bg: #ffffff; /* Solid white background */
-            --text-color: #000;
-            --border-color: #ccc;
+            --container-bg: #ffffff;
+            --text-color: #000000;
+            --border-color: #cccccc;
             --header-bg: #2b4c7e;
             --sub-header: #3b5998;
             --announcement-bg: #f0f4f8;
@@ -18,9 +18,9 @@
 
         body.dark-mode {
             --bg-color: #121212;
-            --container-bg: #1e1e1e; /* Solid dark background */
+            --container-bg: #1e1e1e;
             --text-color: #e0e0e0;
-            --border-color: #444;
+            --border-color: #444444;
             --header-bg: #1a2a40;
             --sub-header: #2c3e50;
             --announcement-bg: #252525;
@@ -30,16 +30,147 @@
             --max-width: 100%;
         }
 
-        body { background: var(--bg-color); color: var(--text-color); font-family: Tahoma, Arial, sans-serif; padding: 20px; margin: 0; transition: background 0.3s, color 0.3s; }
-        
-        .container { max-width: var(--max-width); margin: 0 auto; background-color: var(--container-bg) !important; border: 1px solid var(--border-color); padding: 15px; box-sizing: border-box; }
-        .auth-box { margin-top: 20px; padding: 15px; border: 1px solid var(--border-color); background-color: var(--container-bg) !important; }
-        .announcement { background-color: var(--announcement-bg) !important; border: 1px solid var(--border-color); padding: 10px; margin-bottom: 15px; font-size: 13px; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: Tahoma, Arial, sans-serif;
+            padding: 20px;
+            margin: 0;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            background-color: var(--container-bg);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            box-sizing: border-box;
+            transition: max-width 0.3s;
+        }
+
+        .settings-menu {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            font-size: 12px;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .settings-menu button {
+            background-color: var(--header-bg);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+        header {
+            background-color: var(--header-bg);
+            color: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon-img {
+            width: 24px;
+            height: 24px;
+            vertical-align: middle;
+            background: #ddd;
+            display: inline-block;
+        }
+
+        .announcement {
+            background-color: var(--announcement-bg);
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+
+        .board-header {
+            background-color: var(--sub-header);
+            color: white;
+            padding: 8px 12px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .category-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            align-items: center;
+        }
+
+        .category-item a {
+            color: #1a0dab;
+            font-weight: bold;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        body.dark-mode .category-item a {
+            color: #8ab4f8;
+        }
+
+        .category-desc {
+            font-size: 12px;
+            color: #666;
+            margin: 4px 0 0 0;
+        }
+
+        body.dark-mode .category-desc {
+            color: #aaa;
+        }
+
+        .auth-box {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            background-color: var(--container-bg);
+        }
+
+        input {
+            padding: 6px;
+            margin: 5px 0;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        button.action-btn {
+            background-color: var(--header-bg);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Corner Settings Menu -->
     <div class="settings-menu">
         ⚙️ Settings: 
         <button onclick="toggleDarkMode()">Dark Mode</button>
@@ -49,7 +180,6 @@
     <div class="container">
         <header>
             <h1>
-                <!-- Drop your icon image files in later by changing src="icons/cat.png" -->
                 <img src="" alt="CatIcon" class="icon-img" id="site-icon"> 
                 CatThread
             </h1>
@@ -68,7 +198,6 @@
             <div style="padding: 15px; color: #666;">Loading boards...</div>
         </div>
 
-        <!-- Authentication & Signup Panel -->
         <div class="auth-box" id="auth-section">
             <h3 style="margin-top:0;">Account / Sign Up</h3>
             <div id="auth-forms">
@@ -95,7 +224,6 @@
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // --- LocalStorage Settings (Dark Mode & Wide Mode) ---
         if (localStorage.getItem('darkMode') === 'enabled') {
             document.body.classList.add('dark-mode');
         }
@@ -113,7 +241,6 @@
             localStorage.setItem('wideMode', document.body.classList.contains('wide-mode') ? 'enabled' : 'disabled');
         }
 
-        // --- Load Categories ---
         async function loadCategories() {
             const container = document.getElementById('categories-list');
             const { data: categories, error } = await _supabase.from('categories').select('*');
@@ -137,7 +264,6 @@
             });
         }
 
-        // --- Auth Functions ---
         async function signUpWithEmail() {
             const username = document.getElementById('username').value.trim();
             const email = document.getElementById('email').value.trim();
@@ -145,7 +271,6 @@
 
             if (!username) { alert('Please enter a unique username!'); return; }
 
-            // Check if username is unique in profiles table first
             const { data: existing } = await _supabase.from('profiles').select('username').eq('username', username).single();
             if (existing) {
                 alert('That username is already taken! Choose another.');
@@ -156,7 +281,6 @@
             if (error) { alert(error.message); return; }
 
             if (data.user) {
-                // Save profile username
                 await _supabase.from('profiles').insert([{ id: data.user.id, username }]);
                 alert('Signup successful! Check your email to confirm if required, or try logging in.');
             }
@@ -185,7 +309,6 @@
                 document.getElementById('auth-forms').style.display = 'none';
                 document.getElementById('logged-in-panel').style.display = 'block';
                 
-                // Fetch profile username
                 const { data: profile } = await _supabase.from('profiles').select('username').eq('id', session.user.id).single();
                 document.getElementById('current-username').innerText = profile ? profile.username : session.user.email;
                 document.getElementById('user-status').innerText = `Logged in as: ${profile ? profile.username : 'User'}`;
