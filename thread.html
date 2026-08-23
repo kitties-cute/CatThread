@@ -13,7 +13,7 @@
             --border-color: #b0c4de;
             --header-bg: #3a75c4;
             --sub-header: #4a90e2;
-            --announcement-bg: #e6f0fa;
+            --announcement-bg: #ffffff; /* Reverted from blue to match container */
             --max-width: 900px;
         }
 
@@ -24,7 +24,7 @@
             --border-color: #3f4e66;
             --header-bg: #2b6cb0;
             --sub-header: #3182ce;
-            --announcement-bg: #2a3442;
+            --announcement-bg: #222831; /* Reverted from blue to match container */
         }
 
         body.wide-mode {
@@ -227,8 +227,9 @@
             document.getElementById('error-modal').style.display = 'none';
         }
 
-        async function getUsernameForUser(userId, userEmail) {
+        async function getAuthorName(userId) {
             try {
+                // Pulls directly from your profiles username field, or whatever identifier you set up
                 const { data: profile } = await _supabase
                     .from('profiles')
                     .select('username')
@@ -241,8 +242,7 @@
             } catch (e) {
                 console.error("Could not fetch profile username", e);
             }
-            // Fallback to email prefix if profile username isn't available
-            return userEmail ? userEmail.split('@')[0] : 'Anonymous';
+            return 'Anonymous';
         }
 
         async function initPage() {
@@ -258,7 +258,7 @@
                     document.getElementById('reply-section').style.display = 'block';
                     document.getElementById('login-prompt-reply').style.display = 'none';
                     
-                    const username = await getUsernameForUser(session.user.id, session.user.email);
+                    const username = await getAuthorName(session.user.id);
                     document.getElementById('user-status').innerText = `Logged in: ${username}`;
                 } else {
                     document.getElementById('user-status').innerText = 'Not logged in';
@@ -332,7 +332,7 @@
                 return;
             }
 
-            const authorName = await getUsernameForUser(session.user.id, session.user.email);
+            const authorName = await getAuthorName(session.user.id);
 
             const { error: insertError } = await _supabase
                 .from('posts')
