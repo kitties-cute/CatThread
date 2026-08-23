@@ -7,7 +7,7 @@
     <style>
         :root {
             --bg-color: #eef2f5;
-            --container-bg: #white;
+            --container-bg: #ffffff; /* Solid white background */
             --text-color: #000;
             --border-color: #ccc;
             --header-bg: #2b4c7e;
@@ -18,7 +18,7 @@
 
         body.dark-mode {
             --bg-color: #121212;
-            --container-bg: #1e1e1e;
+            --container-bg: #1e1e1e; /* Solid dark background */
             --text-color: #e0e0e0;
             --border-color: #444;
             --header-bg: #1a2a40;
@@ -31,29 +31,10 @@
         }
 
         body { background: var(--bg-color); color: var(--text-color); font-family: Tahoma, Arial, sans-serif; padding: 20px; margin: 0; transition: background 0.3s, color 0.3s; }
-        .container { max-width: var(--max-width); margin: 0 auto; background: var(--container-bg); border: 1px solid var(--border-color); padding: 15px; transition: max-width 0.3s; }
         
-        /* Corner Settings Menu */
-        .settings-menu { position: fixed; top: 10px; right: 10px; background: var(--container-bg); border: 1px solid var(--border-color); padding: 8px; font-size: 12px; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .settings-menu button { background: var(--header-bg); color: white; border: none; padding: 4px 8px; cursor: pointer; margin-left: 5px; }
-
-        header { background: var(--header-bg); color: white; padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-        h1 { margin: 0; font-size: 24px; display: flex; align-items: center; gap: 10px; }
-        
-        /* Icon placeholders (replace src with your icon image files later) */
-        .icon-img { width: 24px; height: 24px; vertical-align: middle; background: #ddd; display: inline-block; }
-
-        .announcement { background: var(--announcement-bg); border: 1px solid var(--border-color); padding: 10px; margin-bottom: 15px; font-size: 13px; }
-        .board-header { background: var(--sub-header); color: white; padding: 8px 12px; font-weight: bold; font-size: 14px; }
-        .category-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--border-color); align-items: center; }
-        .category-item a { color: #1a0dab; font-weight: bold; text-decoration: none; font-size: 16px; }
-        body.dark-mode .category-item a { color: #8ab4f8; }
-        .category-desc { font-size: 12px; color: #666; margin: 4px 0 0 0; }
-        body.dark-mode .category-desc { color: #aaa; }
-        
-        .auth-box { margin-top: 20px; padding: 15px; border: 1px solid var(--border-color); background: var(--announcement-bg); }
-        input { padding: 6px; margin: 5px 0; width: 100%; box-sizing: border-box; }
-        button.action-btn { background: var(--header-bg); color: white; border: none; padding: 8px 12px; cursor: pointer; font-weight: bold; }
+        .container { max-width: var(--max-width); margin: 0 auto; background-color: var(--container-bg) !important; border: 1px solid var(--border-color); padding: 15px; box-sizing: border-box; }
+        .auth-box { margin-top: 20px; padding: 15px; border: 1px solid var(--border-color); background-color: var(--container-bg) !important; }
+        .announcement { background-color: var(--announcement-bg) !important; border: 1px solid var(--border-color); padding: 10px; margin-bottom: 15px; font-size: 13px; }
     </style>
 </head>
 <body>
