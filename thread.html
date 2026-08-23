@@ -13,7 +13,7 @@
             --border-color: #b0c4de;
             --header-bg: #3a75c4;
             --sub-header: #4a90e2;
-            --announcement-bg: #ffffff; /* Reverted from blue to match container */
+            --announcement-bg: #ffffff;
             --max-width: 900px;
         }
 
@@ -24,7 +24,7 @@
             --border-color: #3f4e66;
             --header-bg: #2b6cb0;
             --sub-header: #3182ce;
-            --announcement-bg: #222831; /* Reverted from blue to match container */
+            --announcement-bg: #222831;
         }
 
         body.wide-mode {
@@ -229,7 +229,6 @@
 
         async function getAuthorName(userId) {
             try {
-                // Pulls directly from your profiles username field, or whatever identifier you set up
                 const { data: profile } = await _supabase
                     .from('profiles')
                     .select('username')
@@ -275,10 +274,13 @@
                 if (threadError || !threadData) {
                     threadContainer.innerHTML = '<p style="padding: 10px; color: red;">Could not load thread details.</p>';
                 } else {
+                    // Check multiple field names to prevent "Anonymous" from showing if data exists in alternate columns
+                    const threadAuthor = threadData.author_name || threadData.username || threadData.user_name || threadData.email || 'Anonymous';
+
                     threadContainer.innerHTML = `
                         <div class="main-thread-box">
                             <h2 style="margin-top:0;">${threadData.title}</h2>
-                            <div class="post-author">Posted by: ${threadData.author_name || 'Anonymous'}</div>
+                            <div class="post-author">Posted by: ${threadAuthor}</div>
                             <p>${threadData.content || threadData.body || ''}</p>
                         </div>
                     `;
