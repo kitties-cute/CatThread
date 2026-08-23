@@ -275,7 +275,7 @@
                     <button class="action-btn" onclick="signUpWithEmail()">Sign Up</button>
                     <button class="action-btn" onclick="loginWithEmail()">Log In</button>
                     
-                    <!-- Official Google Client ID wrapper handler setup -->
+                    <!-- Official Google Client ID hook -->
                     <div id="g_id_onload"
                          data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
                          data-callback="handleGoogleSignIn"
@@ -333,6 +333,16 @@
             localStorage.setItem('wideMode', document.body.classList.contains('wide-mode') ? 'enabled' : 'disabled');
         }
 
+        // Initialize Google Identity Services on load
+        window.onload = function () {
+            if (typeof google !== 'undefined') {
+                google.accounts.id.initialize({
+                    client_id: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+                    callback: handleGoogleSignIn
+                });
+            }
+        };
+
         async function loadCategories() {
             const container = document.getElementById('categories-list');
             const { data: categories, error } = await _supabase.from('categories').select('*');
@@ -385,16 +395,29 @@
             if (error) { alert(error.message); } else { location.reload(); }
         }
 
-        // Trigger Google SDK prompt programmatically when the custom markup button is clicked
+        // Trigger Google SDK prompt when the custom markup button is clicked
         function triggerGoogleSDKPrompt() {
             if (typeof google !== 'undefined' && google.accounts) {
-                google.accounts.id.prompt();
+                google.accounts.id.prompt((notification) => {
+                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                        const client = google.accounts.oauth2.initTokenClient({
+                            client_id: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+                            scope: "email profile openid",
+                            callback: async (tokenResponse) => {
+                                if (tokenResponse && tokenResponse.access_token) {
+                                    location.reload();
+                                }
+                            }
+                        });
+                        client.requestAccessToken();
+                    }
+                });
             } else {
-                alert('Google Sign-In script is still loading. Please try again in a moment.');
+                alert('Google Sign-In library is still loading. Please try again.');
             }
         }
 
-        // Handles the JWT response from the Google SDK and exchanges it via Supabase
+        // Handles the token response from the Google SDK and exchanges it via Supabase
         async function handleGoogleSignIn(response) {
             const { data, error } = await _supabase.auth.signInWithIdToken({
                 provider: 'google',
