@@ -89,16 +89,6 @@
         h1 {
             margin: 0;
             font-size: 24px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .forum-icon {
-            width: 24px;
-            height: 24px;
-            vertical-align: middle;
-            object-fit: contain;
         }
 
         .announcement {
@@ -107,9 +97,6 @@
             padding: 12px;
             margin-bottom: 15px;
             font-size: 13px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
         .board-header {
@@ -126,12 +113,6 @@
             padding: 14px 12px;
             border-bottom: 1px solid var(--border-color);
             align-items: center;
-        }
-
-        .category-item-left {
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
 
         .category-item a {
@@ -248,10 +229,7 @@
 
     <div class="container">
         <header>
-            <h1>
-                <img src="https://api.iconify.design/fluent-emoji:cat-face.svg" alt="Cat Icon" class="forum-icon">
-                CatThread
-            </h1>
+            <h1>CatThread</h1>
             <div id="user-status" style="font-weight: bold;">Not logged in</div>
         </header>
 
@@ -344,12 +322,9 @@
             categories.forEach(cat => {
                 container.innerHTML += `
                     <div class="category-item">
-                        <div class="category-item-left">
-                            <img src="https://api.iconify.design/fluent-emoji:speech-balloon.svg" alt="Board Icon" class="forum-icon">
-                            <div>
-                                <a href="category.html?id=${cat.id}">${cat.name}</a>
-                                <p class="category-desc">${cat.description || ''}</p>
-                            </div>
+                        <div>
+                            <a href="category.html?id=${cat.id}">${cat.name}</a>
+                            <p class="category-desc">${cat.description || ''}</p>
                         </div>
                         <div style="font-size:12px; font-weight:bold;">Active Board</div>
                     </div>
