@@ -58,14 +58,25 @@
         const threadId = urlParams.get('id');
 
         async function loadThread() {
-            // Load main thread
-            const { data: thread } = await _supabase.from('threads').select('*, profiles(username)').eq('id', threadId).single();
-            if (!thread) { document.getElementById('thread-main-title').innerText = 'Thread not found'; return; }
+            // Fetch the thread directly by ID without forcing a strict profile join that might fail
+            const { data: thread, error } = await _supabase.from('threads').select('*').eq('id', threadId).single();
+    
+            if (error || !thread) { 
+                console.error("Error loading thread:", error);
+                document.getElementById('thread-main-title').innerText = 'Thread not found'; 
+                return; 
+            }
 
             document.getElementById('thread-main-title').innerText = thread.title;
             document.getElementById('back-link').href = `category.html?id=${thread.category_id}`;
 
-            const author = thread.profiles ? thread.profiles.username : 'Anonymous';
+            // Fetch author username separately to prevent join errors
+            let author = 'Anonymous';
+            if (thread.user_id) {
+                const { data: profile } = await _supabase.from('profiles').select('username').eq('id', thread.user_id).maybeSingle();
+        if (profile && profile.username) author = profile.username;
+            }
+
             document.getElementById('thread-container').innerHTML = `
                 <div class="post-box" style="border-width: 2px;">
                     <div class="post-header">Posted by ${author} on ${new Date(thread.created_at).toLocaleString()}</div>
@@ -73,7 +84,6 @@
                 </div>
             `;
 
-            // Load replies (assuming you have a 'replies' table linked to thread_id)
             loadReplies();
         }
 
