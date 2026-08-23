@@ -5,29 +5,96 @@
     <title>CatThread - Category</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-:root {
+        :root {
             --bg-color: #eef2f5; 
-            --container-bg: #ffffff; /* Solid white background */
-            --text-color: #000; 
-            --border-color: #ccc;
+            --container-bg: #ffffff; 
+            --text-color: #000000; 
+            --border-color: #cccccc;
             --header-bg: #2b4c7e; 
             --sub-header: #3b5998; 
             --max-width: 900px;
         }
         body.dark-mode {
             --bg-color: #121212; 
-            --container-bg: #1e1e1e; /* Solid dark background */
+            --container-bg: #1e1e1e; 
             --text-color: #e0e0e0; 
-            --border-color: #444;
+            --border-color: #444444;
             --header-bg: #1a2a40; 
             --sub-header: #2c3e50;
         }
         body.wide-mode { --max-width: 100%; }
 
-        body { background: var(--bg-color); color: var(--text-color); font-family: Tahoma, Arial, sans-serif; padding: 20px; margin: 0; }
-        
-        .container { max-width: var(--max-width); margin: 0 auto; background-color: var(--container-bg) !important; border: 1px solid var(--border-color); padding: 15px; box-sizing: border-box; }
-        .create-box { margin-top: 20px; padding: 15px; border: 1px solid var(--border-color); background-color: var(--container-bg) !important; }
+        body { 
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
+            font-family: Tahoma, Arial, sans-serif; 
+            padding: 20px; 
+            margin: 0; 
+        }
+        .container { 
+            max-width: var(--max-width); 
+            margin: 0 auto; 
+            background-color: var(--container-bg); 
+            border: 1px solid var(--border-color); 
+            padding: 15px; 
+            box-sizing: border-box; 
+        }
+        header { 
+            background-color: var(--header-bg); 
+            color: white; 
+            padding: 15px; 
+            margin-bottom: 15px; 
+        }
+        h1 { margin: 0; font-size: 24px; }
+        .back-link { 
+            display: inline-block; 
+            margin-bottom: 15px; 
+            color: #1a0dab; 
+            text-decoration: none; 
+            font-size: 14px; 
+        }
+        body.dark-mode .back-link { color: #8ab4f8; }
+        .board-header { 
+            background-color: var(--sub-header); 
+            color: white; 
+            padding: 8px 12px; 
+            font-weight: bold; 
+            font-size: 14px; 
+        }
+        .thread-item { 
+            padding: 12px; 
+            border-bottom: 1px solid var(--border-color); 
+        }
+        .thread-item a { 
+            color: #1a0dab; 
+            font-weight: bold; 
+            text-decoration: none; 
+            font-size: 15px; 
+        }
+        body.dark-mode .thread-item a { color: #8ab4f8; }
+        .create-box { 
+            margin-top: 20px; 
+            padding: 15px; 
+            border: 1px solid var(--border-color); 
+            background-color: var(--container-bg); 
+        }
+        input, textarea { 
+            padding: 6px; 
+            margin: 5px 0; 
+            width: 100%; 
+            box-sizing: border-box; 
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+        button.action-btn { 
+            background-color: var(--header-bg); 
+            color: white; 
+            border: none; 
+            padding: 8px 12px; 
+            cursor: pointer; 
+            font-weight: bold; 
+        }
     </style>
 </head>
 <body>
@@ -47,7 +114,6 @@
             <div style="padding: 15px; color: #666;">Loading threads...</div>
         </div>
 
-        <!-- Create New Thread Form -->
         <div class="create-box">
             <h3 style="margin-top:0;">Create a New Thread</h3>
             <input type="text" id="thread-title" placeholder="Thread Title">
@@ -109,11 +175,9 @@
                 return;
             }
 
-            // Get user's unique username from profile table
             const { data: profile } = await _supabase.from('profiles').select('username').eq('id', session.user.id).single();
             const authorName = profile ? profile.username : 'User';
 
-            // Insert thread
             const { data: newThread, error: threadError } = await _supabase
                 .from('threads')
                 .insert([{ category_id: categoryId, title, author_name: authorName }])
@@ -125,7 +189,6 @@
                 return;
             }
 
-            // Insert initial post inside the thread
             await _supabase.from('posts').insert([{ thread_id: newThread.id, content, author_name: authorName }]);
 
             alert('Thread created successfully!');
