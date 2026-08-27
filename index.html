@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CatThread</title>
     <link rel="icon" type="image/png" href="icons/cat.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -41,6 +42,7 @@
         }
 
         .container {
+            width: 100%;
             max-width: var(--max-width);
             margin: 0 auto;
             background-color: var(--container-bg);
@@ -83,8 +85,10 @@
             padding: 15px;
             margin-bottom: 15px;
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
+            gap: 10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
@@ -162,6 +166,7 @@
             padding: 8px;
             margin: 6px 0;
             width: 100%;
+            max-width: 100%;
             box-sizing: border-box;
             background-color: var(--container-bg);
             color: var(--text-color);
