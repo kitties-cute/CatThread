@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Category - CatThread</title>
     <link rel="icon" type="image/png" href="icons/cat.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -15,14 +16,14 @@
             --border-color: #3f4e66; --header-bg: #2b6cb0; --sub-header: #3182ce;
         }
         body { background-color: var(--bg-color); color: var(--text-color); font-family: Tahoma, sans-serif; padding: 20px; margin: 0; }
-        .container { max-width: 900px; margin: 0 auto; background-color: var(--container-bg); border: 2px solid var(--border-color); padding: 15px; box-sizing: border-box; }
-        header { background-color: var(--header-bg); color: white; padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .container { width: 100%; max-width: 900px; margin: 0 auto; background-color: var(--container-bg); border: 2px solid var(--border-color); padding: 15px; box-sizing: border-box; }
+        header { background-color: var(--header-bg); color: white; padding: 15px; margin-bottom: 15px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
         h1 { margin: 0; font-size: 20px; }
         a { color: #1e90ff; text-decoration: none; font-weight: bold; }
         .board-header { background-color: var(--sub-header); color: white; padding: 10px 12px; font-weight: bold; }
         .thread-item { padding: 12px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
         .new-thread-box { margin-top: 20px; padding: 15px; border: 1px solid var(--border-color); }
-        input, textarea { padding: 8px; margin: 6px 0; width: 100%; box-sizing: border-box; background-color: var(--container-bg); color: var(--text-color); border: 1px solid var(--border-color); }
+        input, textarea { padding: 8px; margin: 6px 0; width: 100%; max-width: 100%; box-sizing: border-box; background-color: var(--container-bg); color: var(--text-color); border: 1px solid var(--border-color); }
         button { background-color: var(--header-bg); color: white; border: none; padding: 8px 12px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
