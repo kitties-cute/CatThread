@@ -135,6 +135,14 @@
             font-weight: bold;
         }
 
+        .inline-error {
+            color: #e53e3e;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 5px 0;
+            display: none;
+        }
+
         /* 3-Dots Menu Styles */
         .menu-container {
             position: absolute;
@@ -246,6 +254,7 @@
 
         <div class="reply-section" id="reply-section" style="display:none;">
             <h3 style="margin-top:0;">Post a Reply</h3>
+            <div id="reply-error" class="inline-error"></div>
             <textarea id="reply-content" rows="4" placeholder="Write your reply here..."></textarea>
             <div style="font-size: 13px; margin: 6px 0;">
                 <label style="cursor: pointer;">
@@ -358,7 +367,6 @@
                 document.getElementById('reply-section').style.display = 'block';
                 document.getElementById('login-prompt').style.display = 'none';
 
-                // Fetch current user's profile username
                 const { data: profile } = await _supabase.from('profiles').select('username').eq('id', currentUserId).maybeSingle();
                 if (profile && profile.username) {
                     currentUsername = profile.username;
@@ -370,7 +378,7 @@
         async function loadThreadData() {
             const { data: thread, error } = await _supabase.from('threads').select('*').eq('id', threadId).single();
             if (error || !thread) {
-                document.getElementById('main-post-container').innerHTML = '<div style="padding:15px; color:red;">Thread not found.</div>';
+                document.getElementById('main-post-container').innerHTML = '<div style="padding:15px; color:#e53e3e; font-weight:bold;">Thread not found.</div>';
                 return;
             }
 
@@ -414,6 +422,7 @@
 
             document.getElementById('main-post-container').innerHTML = `
                 <div class="post-box" id="thread-box-${thread.id}">
+                    <div id="thread-error" class="inline-error"></div>
                     ${threadMenuHTML}
                     <div class="meta-info">Started by <b>${author}</b><br>on ${new Date(thread.created_at).toLocaleString()}</div>
                     <div id="thread-content-text" style="white-space: pre-wrap; line-height: 1.5;">${formatContent(thread.content)}</div>
@@ -427,8 +436,7 @@
             const list = document.getElementById('comments-list');
 
             if (!threadId) {
-                console.error('loadComments: missing threadId in URL');
-                list.innerHTML = '<div style="padding:15px; color:red;">Thread id missing in URL.</div>';
+                list.innerHTML = '<div style="padding:15px; color:#e53e3e; font-weight:bold;">Thread ID missing in URL.</div>';
                 return;
             }
 
@@ -441,8 +449,7 @@
                 .order('created_at', { ascending: true });
 
             if (res.error) {
-                console.error('Supabase error fetching replies:', res.error);
-                list.innerHTML = `<div style="padding:15px; color:red;">Error loading replies: ${res.error.message}</div>`;
+                list.innerHTML = `<div style="padding:15px; color:#e53e3e; font-weight:bold;">Error loading replies: ${res.error.message}</div>`;
                 return;
             }
 
@@ -462,7 +469,6 @@
                 const encContent = encodeURIComponent(c.content || '');
                 const encAuthor = encodeURIComponent(author);
 
-                // Allow editing/deleting if the post's author_name matches the logged-in user's username
                 if (c.author_name === currentUsername) {
                     commentMenuHTML = `
                         <div class="menu-container">
@@ -487,6 +493,7 @@
 
                 list.innerHTML += `
                     <div class="comment-box" id="comment-box-${c.id}">
+                        <div id="comment-error-${c.id}" class="inline-error"></div>
                         ${commentMenuHTML}
                         <div class="meta-info">Reply by <b>${author}</b><br>on ${new Date(c.created_at).toLocaleString()}</div>
                         <div style="white-space: pre-wrap; line-height: 1.5;" id="comment-text-${c.id}">${formatContent(c.content)}</div>
@@ -496,10 +503,18 @@
         }
 
         async function postReply() {
+            const errDiv = document.getElementById('reply-error');
+            errDiv.style.display = 'none';
+            errDiv.innerText = '';
+
             const content = document.getElementById('reply-content').value.trim();
             const allowArchive = document.getElementById('reply-allow-archive').checked;
             
-            if (!content) { alert('Reply cannot be empty.'); return; }
+            if (!content) {
+                errDiv.innerText = '⚠️ Reply cannot be empty.';
+                errDiv.style.display = 'block';
+                return;
+            }
             
             const threadIdValue = /^\d+$/.test(threadId) ? parseInt(threadId, 10) : threadId;
 
@@ -510,8 +525,10 @@
                 allow_archive: allowArchive
             }]);
 
-            if (error) alert('Error: ' + error.message);
-            else {
+            if (error) {
+                errDiv.innerText = '⚠️ Error: ' + error.message;
+                errDiv.style.display = 'block';
+            } else {
                 document.getElementById('reply-content').value = '';
                 document.getElementById('reply-allow-archive').checked = true;
                 loadComments();
@@ -521,15 +538,29 @@
         async function deleteThread(id, catId) {
             if (!confirm('Are you sure you want to delete this thread?')) return;
             const { error } = await _supabase.from('threads').delete().eq('id', id);
-            if (error) alert('Error deleting thread: ' + error.message);
-            else window.location.href = `category.html?id=${catId}`;
+            if (error) {
+                const errDiv = document.getElementById('thread-error');
+                if (errDiv) {
+                    errDiv.innerText = '⚠️ Error deleting thread: ' + error.message;
+                    errDiv.style.display = 'block';
+                }
+            } else {
+                window.location.href = `category.html?id=${catId}`;
+            }
         }
 
         async function deleteComment(id) {
             if (!confirm('Are you sure you want to delete this reply?')) return;
             const { error } = await _supabase.from('posts').delete().eq('id', id);
-            if (error) alert('Error deleting reply: ' + error.message);
-            else loadComments();
+            if (error) {
+                const errDiv = document.getElementById(`comment-error-${id}`);
+                if (errDiv) {
+                    errDiv.innerText = '⚠️ Error deleting reply: ' + error.message;
+                    errDiv.style.display = 'block';
+                }
+            } else {
+                loadComments();
+            }
         }
 
         function enableEditThread(id, encTitle, encContent) {
@@ -538,6 +569,7 @@
             const box = document.getElementById(`thread-box-${id}`);
             box.innerHTML = `
                 <h3 style="margin-top:0;">Edit Thread</h3>
+                <div id="edit-thread-error" class="inline-error"></div>
                 <label style="font-size:12px; font-weight:bold;">Title:</label>
                 <input type="text" id="edit-thread-title" value="${title}">
                 <label style="font-size:12px; font-weight:bold;">Content:</label>
@@ -548,13 +580,24 @@
         }
 
         async function saveEditThread(id) {
+            const errDiv = document.getElementById('edit-thread-error');
+            errDiv.style.display = 'none';
+            errDiv.innerText = '';
+
             const newTitle = document.getElementById('edit-thread-title').value.trim();
             const newContent = document.getElementById('edit-thread-content').value.trim();
-            if (!newTitle || !newContent) { alert('Fields cannot be empty'); return; }
+            
+            if (!newTitle || !newContent) {
+                errDiv.innerText = '⚠️ Fields cannot be empty.';
+                errDiv.style.display = 'block';
+                return;
+            }
 
             const { error } = await _supabase.from('threads').update({ title: newTitle, content: newContent }).eq('id', id);
-            if (error) alert('Error updating thread: ' + error.message);
-            else {
+            if (error) {
+                errDiv.innerText = '⚠️ Error updating thread: ' + error.message;
+                errDiv.style.display = 'block';
+            } else {
                 document.getElementById('thread-title').innerHTML = formatContent(newTitle);
                 loadThreadData();
             }
@@ -564,19 +607,38 @@
             const content = decodeURIComponent(encContent);
             const box = document.getElementById(`comment-box-${id}`);
             box.innerHTML = `
-                <textarea id="edit-comment-content" rows="3">${content}</textarea>
+                <div id="edit-comment-error-${id}" class="inline-error"></div>
+                <textarea id="edit-comment-content-${id}" rows="3">${content}</textarea>
                 <button class="action-btn" onclick="saveEditComment('${id}')">Save</button>
                 <button class="action-btn" style="background:#777;" onclick="loadComments()">Cancel</button>
             `;
         }
 
         async function saveEditComment(id) {
-            const newContent = document.getElementById('edit-comment-content').value.trim();
-            if (!newContent) { alert('Reply cannot be empty'); return; }
+            const errDiv = document.getElementById(`edit-comment-error-${id}`);
+            if (errDiv) {
+                errDiv.style.display = 'none';
+                errDiv.innerText = '';
+            }
+
+            const newContent = document.getElementById(`edit-comment-content-${id}`).value.trim();
+            if (!newContent) {
+                if (errDiv) {
+                    errDiv.innerText = '⚠️ Reply cannot be empty.';
+                    errDiv.style.display = 'block';
+                }
+                return;
+            }
 
             const { error } = await _supabase.from('posts').update({ content: newContent }).eq('id', id);
-            if (error) alert('Error updating reply: ' + error.message);
-            else loadComments();
+            if (error) {
+                if (errDiv) {
+                    errDiv.innerText = '⚠️ Error updating reply: ' + error.message;
+                    errDiv.style.display = 'block';
+                }
+            } else {
+                loadComments();
+            }
         }
 
         function archiveContent(encTitle, encContent, encAuthor, date, type) {
