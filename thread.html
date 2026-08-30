@@ -266,22 +266,30 @@
         let currentUserId = null;
         let trustedDomains = [];
 
-        async function loadTrustedLinks() {
-            try {
-                const response = await fetch('trustedlinks.json');
-                if (response.ok) {
-                    const data = await response.json();
-                    trustedDomains = data.domains || data;
+    async function loadTrustedLinks() {
+                try {
+                    const response = await fetch('trustedlinks.json?t=' + Date.now());
+                    if (response.ok) {
+                        const data = await response.json();
+                        // Supports both {"domains": [...]} and a flat [...] array format
+                        trustedDomains = (data.domains || data).map(d => d.trim().toLowerCase());
+                        console.log("Trusted domains successfully loaded:", trustedDomains);
+                    } else {
+                        console.warn("trustedlinks.json returned status:", response.status);
+                    }
+                } catch (e) {
+                    console.error('Failed to load trustedlinks.json:', e);
                 }
-            } catch (e) {
-                console.warn('trustedlinks.json not found or failed to load. Continuing normally.');
             }
-        }
 
         function isTrustedLink(urlStr) {
             try {
                 const urlObj = new URL(urlStr);
-                return trustedDomains.some(domain => urlObj.hostname === domain || urlObj.hostname.endsWith('.' + domain));
+                const hostname = urlObj.hostname.toLowerCase();
+                
+                return trustedDomains.some(domain => {
+                    return hostname === domain || hostname.endsWith('.' + domain);
+                });
             } catch (e) {
                 return false;
             }
