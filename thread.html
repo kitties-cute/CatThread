@@ -545,8 +545,12 @@
         }
 
         function archiveContent(encTitle, encContent, author, date, type) {
-            const title = encTitle ? decodeURIComponent(encTitle) : '';
-            const content = decodeURIComponent(encContent);
+            const rawTitle = encTitle ? decodeURIComponent(encTitle) : '';
+            const rawContent = decodeURIComponent(encContent);
+            
+            // Run formatContent on title and content so emojis turn into OpenMoji SVGs in the archive
+            const formattedTitle = formatContent(rawTitle);
+            const formattedContent = formatContent(rawContent);
             
             const htmlContent = `<!DOCTYPE html>
             <html lang="en">
@@ -612,10 +616,10 @@
                         <h1>CatThread - Archived ${type}</h1>
                     </header>
                     <div class="post-box">
-                        ${title ? `<h2 style="margin-top:0; font-size:18px;">${title}</h2>` : ''}
+                        ${formattedTitle ? `<h2 style="margin-top:0; font-size:18px;">${formattedTitle}</h2>` : ''}
                         <div class="meta-info"><strong>Author:</strong> ${author}<br><strong>Date:</strong> ${new Date(date).toLocaleString()}</div>
                         <hr style="border: 0; border-top: 1px solid #b0c4de; margin: 10px 0;">
-                        <div style="white-space: pre-wrap; line-height: 1.5;">${content}</div>
+                        <div style="white-space: pre-wrap; line-height: 1.5;">${formattedContent}</div>
                     </div>
                 </div>
             </body>
