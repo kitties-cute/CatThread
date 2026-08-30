@@ -213,7 +213,7 @@
     <!-- Link Warning Modal -->
     <div class="modal-overlay" id="link-warning-modal">
         <div class="modal-content">
-            <h3 style="margin-top:0; color: #e53e3e;">⚠️ External Link Warning</h3>
+            <h3 id="modal-title" style="margin-top:0; color: #e53e3e;">⚠️ External Link Warning</h3>
             <p style="font-size: 13px;">You are about to visit an untrusted link external to CatThread:</p>
             <p id="target-url-display" style="font-size: 12px; word-break: break-all; font-weight: bold; background: rgba(0,0,0,0.05); padding: 8px;"></p>
             <p style="font-size: 12px; color: #777;">Proceed with caution. CatThread is not responsible for external content.</p>
@@ -266,7 +266,6 @@
         let currentUserId = null;
         let trustedDomains = [];
 
-        // Load trusted links safely without blocking thread loading if missing
         async function loadTrustedLinks() {
             try {
                 const response = await fetch('trustedlinks.json');
@@ -320,7 +319,8 @@
                 return `<a href="#" onclick="handleLinkClick(event, '${url}')" style="color: #1e90ff; text-decoration: underline;">${url}</a>`;
             });
 
-            formatted = formatted.replace(/([\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA70}-\u{1FAFF}])/gu, function(match) {
+            // Expanded regex range to safely cover symbols like warning signs (U+26A0) and standard emojis
+            formatted = formatted.replace(/([\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA70}-\u{1FAFF}])/gu, function(match) {
                 let hexCode = match.codePointAt(0).toString(16).toUpperCase();
                 return `<img src="https://cdn.jsdelivr.net/npm/openmoji@latest/color/svg/${hexCode}.svg" alt="${match}" title="${match}" onerror="this.src='icons/cat.png'" style="width: 1.2em; height: 1.2em; vertical-align: -0.2em; display: inline-block;">`;
             });
@@ -342,6 +342,9 @@
         }
 
         async function init() {
+            // Apply OpenMoji formatting to the popup warning heading on startup
+            document.getElementById('modal-title').innerHTML = formatContent('⚠️ External Link Warning');
+
             await loadTrustedLinks();
             
             const { data: { session } } = await _supabase.auth.getSession();
