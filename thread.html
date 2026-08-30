@@ -276,7 +276,7 @@
         <div class="reply-section" id="reply-section" style="display:none;">
             <h3 style="margin-top:0;">Post a Reply</h3>
             <div id="reply-error" class="inline-error"></div>
-            <textarea id="reply-content" rows="4" placeholder="Write your reply here..."></textarea>
+            <textarea id="reply-content" rows="4" placeholder="Write your reply here... (Use :catthread: or U+E000 for favicon)"></textarea>
             <div style="font-size: 13px; margin: 6px 0;">
                 <label style="cursor: pointer;">
                     <input type="checkbox" id="reply-allow-archive" checked style="width: auto; margin-right: 5px;"> Allow others to archive this reply
@@ -352,8 +352,13 @@
         function formatContent(text) {
             if (!text) return '';
             
+            // Replace custom text keywords (:catthread: or U+E000) with the favicon image
+            const iconImg = `<img src="icons/cat.png" alt="CatThread Icon" title="CatThread Icon" style="width: 1.2em; height: 1.2em; vertical-align: -0.2em; display: inline-block;">`;
+            let formatted = text.replace(/:catthread:/gi, iconImg);
+            formatted = formatted.replace(/U\+E000/g, iconImg);
+
             const urlRegex = /(https?:\/\/[^\s]+)/g;
-            let formatted = text.replace(urlRegex, function(url) {
+            formatted = formatted.replace(urlRegex, function(url) {
                 return `<a href="#" onclick="handleLinkClick(event, '${url}')" style="color: #1e90ff; text-decoration: underline;">${url}</a>`;
             });
 
