@@ -370,6 +370,15 @@
         if (localStorage.getItem('darkMode') === 'enabled') document.body.classList.add('dark-mode');
         if (localStorage.getItem('wideMode') === 'enabled') document.body.classList.add('wide-mode');
 
+        // Converts normal text emojis into OpenMoji SVGs
+        function convertToOpenMoji(text) {
+            if (!text) return '';
+            return text.replace(/([\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA70}-\u{1FAFF}])/gu, function(match) {
+                let hexCode = match.codePointAt(0).toString(16).toUpperCase();
+                return `<img src="https://cdn.jsdelivr.net/npm/openmoji@latest/color/svg/${hexCode}.svg" alt="${match}" style="width: 1.2em; height: 1.2em; vertical-align: -0.2em; display: inline-block;">`;
+            });
+        }
+
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
             localStorage.setItem('darkMode', document.body.classList.contains('dark-mode') ? 'enabled' : 'disabled');
@@ -407,8 +416,8 @@
                 container.innerHTML += `
                     <div class="category-item">
                         <div>
-                            <a href="category.html?id=${cat.id}">${cat.name}</a>
-                            <p class="category-desc">${cat.description || ''}</p>
+                            <a href="category.html?id=${cat.id}">${convertToOpenMoji(cat.name)}</a>
+                            <p class="category-desc">${convertToOpenMoji(cat.description || '')}</p>
                         </div>
                         <div style="font-size:12px; font-weight:bold;">Folder / Board</div>
                     </div>
