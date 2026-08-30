@@ -6,6 +6,7 @@
     <title>CatThread - View Thread</title>
     <link rel="icon" type="image/png" href="icons/cat.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@openmoji/openmoji-css@latest/font/openmoji.css">
     <style>
         :root {
             --bg-color: #f0f4f8;
@@ -30,12 +31,13 @@
 
         body.wide-mode {
             --max-width: 100%;
+            --max-height: 100%;
         }
 
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
-            font-family: Tahoma, Arial, sans-serif;
+            font-family: 'OpenMoji', Tahoma, Arial, sans-serif;
             padding: 20px;
             margin: 0;
             transition: background 0.3s, color 0.3s;
