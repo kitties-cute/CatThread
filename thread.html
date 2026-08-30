@@ -430,7 +430,7 @@
     const threadIdValue = /^\d+$/.test(threadId) ? parseInt(threadId, 10) : threadId;
 
     const res = await _supabase
-        .from('comments')
+        .from('posts')
         .select('*')
         .eq('thread_id', threadIdValue)
         .order('created_at', { ascending: true });
