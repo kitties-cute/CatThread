@@ -349,26 +349,47 @@
             pendingUrl = '';
         }
 
-        function formatContent(text) {
-            if (!text) return '';
-            
-            // Replace custom text keywords (:catthread: or U+E000) with the favicon image
-            const iconImg = `<img src="icons/cat.png" alt="CatThread Icon" title="CatThread Icon" style="width: 1.2em; height: 1.2em; vertical-align: -0.2em; display: inline-block;">`;
-            let formatted = text.replace(/:catthread:/gi, iconImg);
-            formatted = formatted.replace(/U\+E000/g, iconImg);
+       function formatContent(text) {
+    if (!text) return '';
+    
+    // Map all existing image assets to shortcodes and custom unicode points
+    const customEmojis = {
+        ':catthread:': 'icons/cat.png',
+        'U+E000': 'icons/cat.png',
+        
+        ':announcement:': 'icons/announcement.png',
+        'U+E001': 'icons/announcement.png',
+        
+        ':settings:': 'icons/settings.png',
+        'U+E002': 'icons/settings.png'
 
-            const urlRegex = /(https?:\/\/[^\s]+)/g;
-            formatted = formatted.replace(urlRegex, function(url) {
-                return `<a href="#" onclick="handleLinkClick(event, '${url}')" style="color: #1e90ff; text-decoration: underline;">${url}</a>`;
-            });
 
-            formatted = formatted.replace(/([\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA70}-\u{1FAFF}])/gu, function(match) {
-                let hexCode = match.codePointAt(0).toString(16).toUpperCase();
-                return `<img src="https://cdn.jsdelivr.net/npm/openmoji@latest/color/svg/${hexCode}.svg" alt="${match}" title="${match}" onerror="this.src='icons/cat.png'" style="width: 1.2em; height: 1.2em; vertical-align: -0.2em; display: inline-block;">`;
-            });
+        ':error:': 'icons/sadcat.png',
+        'U+E003': 'icons/sadcat.png'
+    };
 
-            return formatted;
-        }
+    let formatted = text;
+    for (const [key, src] of Object.entries(customEmojis)) {
+        const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const regex = new RegExp(escapedKey, 'g');
+        const imgTag = `<img src="${src}" alt="${key}" title="${key}" style="width: 1.2em; height: 1.2em; vertical-align: -0.2em; display: inline-block;">`;
+        formatted = formatted.replace(regex, imgTag);
+    }
+
+    // URL formatting
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    formatted = formatted.replace(urlRegex, function(url) {
+        return `<a href="#" onclick="handleLinkClick(event, '${url}')" style="color: #1e90ff; text-decoration: underline;">${url}</a>`;
+    });
+
+    // OpenMoji fallback handling
+    formatted = formatted.replace(/([\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA70}-\u{1FAFF}])/gu, function(match) {
+        let hexCode = match.codePointAt(0).toString(16).toUpperCase();
+        return `<img src="https://cdn.jsdelivr.net/npm/openmoji@latest/color/svg/${hexCode}.svg" alt="${match}" title="${match}" onerror="this.src='icons/cat.png'" style="width: 1.2em; height: 1.2em; vertical-align: -0.2em; display: inline-block;">`;
+    });
+
+    return formatted;
+}
 
         function toggleMenu(event, menuId) {
             event.stopPropagation();
