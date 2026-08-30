@@ -237,11 +237,11 @@
         </div>
 
         <div class="board-header">
-            Comments & Replies
+            Replies
         </div>
 
         <div id="comments-list">
-            <div style="padding: 15px; color: #777;">Loading comments...</div>
+            <div style="padding: 15px; color: #777;">Loading replies...</div>
         </div>
 
         <div class="reply-section" id="reply-section" style="display:none;">
@@ -450,9 +450,9 @@
     list.innerHTML = '';
     for (let c of comments) {
         // keep your existing rendering logic here (username lookup, menu html, etc)
-        let author = 'Anonymous';
+        let author = '{{ERR_CANNOTLOAD}}';
         if (c.user_id) {
-            const { data: profile } = await _supabase.from('profiles').select('username').eq('id', c.user_id).maybeSingle();
+            const { data: profile } = await _supabase.from('profiles').select('username').eq('username', post.author_name).maybeSingle();
             if (profile && profile.username) author = profile.username;
         }
 
