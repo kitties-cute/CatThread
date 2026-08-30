@@ -157,15 +157,23 @@
         if (localStorage.getItem('wideMode') === 'enabled') document.body.classList.add('wide-mode');
 
         const urlParams = new URLSearchParams(window.location.search);
-        const usernameParam = urlParams.get('u');
-        const userIdParam = urlParams.get('i');
+        let usernameParam = urlParams.get('u');
+        let userIdParam = urlParams.get('i');
 
         async function initProfile() {
+            // If neither 'u' nor 'i' is provided, check if user is logged in
             if (!usernameParam && !userIdParam) {
-                document.getElementById('profile-content').innerHTML = '<div class="inline-error">⚠️ No user specified. Use ?u={username} or ?i={userid} in the link.</div>';
-                document.getElementById('user-threads').innerHTML = '';
-                document.getElementById('user-replies').innerHTML = '';
-                return;
+                const { data: { session } } = await _supabase.auth.getSession();
+                if (session && session.user) {
+                    // Redirect to their own profile using their ID
+                    window.location.replace(`profile.html?i=${session.user.id}`);
+                    return;
+                } else {
+                    document.getElementById('profile-content').innerHTML = '<div class="inline-error">⚠️ No user specified and you are not logged in. Please log in on the home page or specify a user via ?u={username} or ?i={userid}.</div>';
+                    document.getElementById('user-threads').innerHTML = '';
+                    document.getElementById('user-replies').innerHTML = '';
+                    return;
+                }
             }
 
             let profileQuery = _supabase.from('profiles').select('*');
@@ -200,14 +208,13 @@
                 </div>
             `;
 
-            loadUserThreads(profileUserId, profileUsername);
+            loadUserThreads(profileUserId);
             loadUserReplies(profileUsername);
         }
 
-        async function loadUserThreads(userId, username) {
+        async function loadUserThreads(userId) {
             const container = document.getElementById('user-threads');
             
-            // Fetch threads matching user_id or author fallback if needed
             const { data: threads, error } = await _supabase
                 .from('threads')
                 .select('*')
