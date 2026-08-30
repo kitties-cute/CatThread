@@ -210,7 +210,6 @@
 </head>
 <body>
 
-    <!-- Link Warning Modal -->
     <div class="modal-overlay" id="link-warning-modal">
         <div class="modal-content">
             <h3 id="modal-title" style="margin-top:0; color: #e53e3e;">⚠️ External Link Warning</h3>
@@ -230,7 +229,6 @@
             <a id="back-link" href="index.html" style="color:white; text-decoration: none; font-weight: bold;">Back</a>
         </header>
 
-        <!-- Main Thread Post inside a Framed Box -->
         <div id="main-post-container">
             <div style="padding: 15px; color: #777;">Loading post...</div>
         </div>
@@ -246,6 +244,11 @@
         <div class="reply-section" id="reply-section" style="display:none;">
             <h3 style="margin-top:0;">Post a Reply</h3>
             <textarea id="reply-content" rows="4" placeholder="Write your reply here..."></textarea>
+            <div style="font-size: 13px; margin: 6px 0;">
+                <label style="cursor: pointer;">
+                    <input type="checkbox" id="reply-allow-archive" checked style="width: auto; margin-right: 5px;"> Allow others to archive this reply
+                </label>
+            </div>
             <button class="action-btn" onclick="postReply()">Submit Reply</button>
         </div>
         <div id="login-prompt" style="margin-top: 15px; font-size: 13px; color: #777;">Log in on the home page to reply or manage your posts.</div>
@@ -266,30 +269,23 @@
         let currentUserId = null;
         let trustedDomains = [];
 
-    async function loadTrustedLinks() {
-                try {
-                    const response = await fetch('trustedlinks.json?t=' + Date.now());
-                    if (response.ok) {
-                        const data = await response.json();
-                        // Supports both {"domains": [...]} and a flat [...] array format
-                        trustedDomains = (data.domains || data).map(d => d.trim().toLowerCase());
-                        console.log("Trusted domains successfully loaded:", trustedDomains);
-                    } else {
-                        console.warn("trustedlinks.json returned status:", response.status);
-                    }
-                } catch (e) {
-                    console.error('Failed to load trustedlinks.json:', e);
+        async function loadTrustedLinks() {
+            try {
+                const response = await fetch('trustedlinks.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    trustedDomains = (data.domains || data).map(d => d.trim().toLowerCase());
                 }
+            } catch (e) {
+                console.warn('trustedlinks.json not found or failed to load.');
             }
+        }
 
         function isTrustedLink(urlStr) {
             try {
                 const urlObj = new URL(urlStr);
                 const hostname = urlObj.hostname.toLowerCase();
-                
-                return trustedDomains.some(domain => {
-                    return hostname === domain || hostname.endsWith('.' + domain);
-                });
+                return trustedDomains.some(domain => hostname === domain || hostname.endsWith('.' + domain));
             } catch (e) {
                 return false;
             }
@@ -327,7 +323,6 @@
                 return `<a href="#" onclick="handleLinkClick(event, '${url}')" style="color: #1e90ff; text-decoration: underline;">${url}</a>`;
             });
 
-            // Expanded regex range to safely cover symbols like warning signs (U+26A0) and standard emojis
             formatted = formatted.replace(/([\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA70}-\u{1FAFF}])/gu, function(match) {
                 let hexCode = match.codePointAt(0).toString(16).toUpperCase();
                 return `<img src="https://cdn.jsdelivr.net/npm/openmoji@latest/color/svg/${hexCode}.svg" alt="${match}" title="${match}" onerror="this.src='icons/cat.png'" style="width: 1.2em; height: 1.2em; vertical-align: -0.2em; display: inline-block;">`;
@@ -350,9 +345,7 @@
         }
 
         async function init() {
-            // Apply OpenMoji formatting to the popup warning heading on startup
             document.getElementById('modal-title').innerHTML = formatContent('⚠️ External Link Warning');
-
             await loadTrustedLinks();
             
             const { data: { session } } = await _supabase.auth.getSession();
@@ -380,14 +373,26 @@
                 if (profile && profile.username) author = profile.username;
             }
 
+            // Generate menu options for Thread
             let threadMenuHTML = '';
-            if (currentUserId && thread.user_id === currentUserId) {
+            const allowArchive = thread.allow_archive !== false; // defaults to true if null/undefined
+
+            if (thread.user_id === currentUserId) {
                 threadMenuHTML = `
                     <div class="menu-container">
                         <button class="dots-btn" onclick="toggleMenu(event, 'thread-menu')">⋮</button>
                         <div id="thread-menu" class="dropdown-menu">
                             <button onclick="enableEditThread('${thread.id}', \`${encodeURIComponent(thread.title)}\`, \`${encodeURIComponent(thread.content)}\`)">Edit</button>
                             <button onclick="deleteThread('${thread.id}', '${thread.category_id}')">Delete</button>
+                            ${allowArchive ? `<button onclick="archiveContent('${encodeURIComponent(thread.title)}', \`${encodeURIComponent(thread.content)}\`, '${author}', '${thread.created_at}', 'Thread')">Archive</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            } else if (allowArchive) {
+                threadMenuHTML = `
+                    <div class="menu-container">
+                        <button class="dots-btn" onclick="toggleMenu(event, 'thread-menu')">⋮</button>
+                        <div id="thread-menu" class="dropdown-menu">
                             <button onclick="archiveContent('${encodeURIComponent(thread.title)}', \`${encodeURIComponent(thread.content)}\`, '${author}', '${thread.created_at}', 'Thread')">Archive</button>
                         </div>
                     </div>
@@ -423,13 +428,24 @@
                 }
 
                 let commentMenuHTML = '';
-                if (currentUserId && c.user_id === currentUserId) {
+                const allowArchive = c.allow_archive !== false; // defaults to true
+
+                if (c.user_id === currentUserId) {
                     commentMenuHTML = `
                         <div class="menu-container">
                             <button class="dots-btn" onclick="toggleMenu(event, 'comment-menu-${c.id}')">⋮</button>
                             <div id="comment-menu-${c.id}" class="dropdown-menu">
                                 <button onclick="enableEditComment('${c.id}', \`${encodeURIComponent(c.content)}\`)">Edit</button>
                                 <button onclick="deleteComment('${c.id}')">Delete</button>
+                                ${allowArchive ? `<button onclick="archiveContent('', \`${encodeURIComponent(c.content)}\`, '${author}', '${c.created_at}', 'Comment')">Archive</button>` : ''}
+                            </div>
+                        </div>
+                    `;
+                } else if (allowArchive) {
+                    commentMenuHTML = `
+                        <div class="menu-container">
+                            <button class="dots-btn" onclick="toggleMenu(event, 'comment-menu-${c.id}')">⋮</button>
+                            <div id="comment-menu-${c.id}" class="dropdown-menu">
                                 <button onclick="archiveContent('', \`${encodeURIComponent(c.content)}\`, '${author}', '${c.created_at}', 'Comment')">Archive</button>
                             </div>
                         </div>
@@ -448,17 +464,21 @@
 
         async function postReply() {
             const content = document.getElementById('reply-content').value.trim();
+            const allowArchive = document.getElementById('reply-allow-archive').checked;
+            
             if (!content) { alert('Reply cannot be empty.'); return; }
             
             const { error } = await _supabase.from('comments').insert([{
                 thread_id: threadId,
                 content: content,
-                user_id: currentUserId
+                user_id: currentUserId,
+                allow_archive: allowArchive
             }]);
 
             if (error) alert('Error: ' + error.message);
             else {
                 document.getElementById('reply-content').value = '';
+                document.getElementById('reply-allow-archive').checked = true;
                 loadComments();
             }
         }
