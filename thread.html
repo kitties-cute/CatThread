@@ -107,6 +107,20 @@
             font-weight: bold;
         }
 
+        .author-link {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .author-link:hover {
+            text-decoration: underline;
+        }
+
+        body.dark-mode .author-link {
+            color: #ffffff;
+        }
+
         .comment-box {
             padding: 12px 15px;
             border-bottom: 1px solid var(--border-color);
@@ -394,15 +408,20 @@
 
             let author = 'Mystery Meow';
             let isMod = false;
-            if (thread.user_id) {
-                const { data: profile } = await _supabase.from('profiles').select('username, is_mod').eq('id', thread.user_id).maybeSingle();
+            let authorUserId = thread.user_id;
+
+            if (authorUserId) {
+                const { data: profile } = await _supabase.from('profiles').select('username, is_mod').eq('id', authorUserId).maybeSingle();
                 if (profile) {
                     if (profile.username) author = profile.username;
                     if (profile.is_mod) isMod = true;
                 }
             }
 
-            const displayAuthor = isMod ? `${author} <span class="mod-tag">[MOD]</span>` : author;
+            const authorHtml = authorUserId 
+                ? `<a href="profile.html?i=${authorUserId}" class="author-link">${author}</a>` 
+                : author;
+            const displayAuthor = isMod ? `${authorHtml} <span class="mod-tag">[MOD]</span>` : authorHtml;
 
             let threadMenuHTML = '';
             const allowArchive = thread.allow_archive !== false;
@@ -476,15 +495,22 @@
             for (let c of comments) {
                 let author = c.author_name || 'Mystery Meow';
                 let isMod = false;
+                let authorUserId = null;
 
                 if (c.author_name) {
-                    const { data: profile } = await _supabase.from('profiles').select('is_mod').eq('username', c.author_name).maybeSingle();
-                    if (profile && profile.is_mod) {
-                        isMod = true;
+                    const { data: profile } = await _supabase.from('profiles').select('id, is_mod').eq('username', c.author_name).maybeSingle();
+                    if (profile) {
+                        authorUserId = profile.id;
+                        if (profile.is_mod) {
+                            isMod = true;
+                        }
                     }
                 }
 
-                const displayAuthor = isMod ? `${author} <span class="mod-tag">[MOD]</span>` : author;
+                const authorHtml = authorUserId 
+                    ? `<a href="profile.html?i=${authorUserId}" class="author-link">${author}</a>` 
+                    : author;
+                const displayAuthor = isMod ? `${authorHtml} <span class="mod-tag">[MOD]</span>` : authorHtml;
 
                 let commentMenuHTML = '';
                 const allowArchive = c.allow_archive !== false;
