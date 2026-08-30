@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - CatThread</title>
+    <link rel="icon" type="image/png" href="icons/cat.png">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@openmoji/openmoji-css@latest/font/openmoji.css">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --container-bg: #ffffff;
+            --text-color: #1a1a1a;
+            --border-color: #b0c4de;
+            --header-bg: #3a75c4;
+            --sub-header: #4a90e2;
+            --max-width: 900px;
+        }
+
+        body.dark-mode {
+            --bg-color: #3e3e42;
+            --container-bg: #3f3e3e;
+            --text-color: #ffffff;
+            --border-color: #ffffff;
+            --header-bg: #02006c;
+            --sub-header: #02006c;
+        }
+
+        body.wide-mode {
+            --max-width: 100%;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'OpenMoji', Tahoma, Arial, sans-serif;
+            padding: 20px;
+            margin: 0;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .container {
+            width: 100%;
+            max-width: var(--max-width);
+            margin: 0 auto;
+            background-color: var(--container-bg);
+            border: 2px solid var(--border-color);
+            padding: 15px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        header {
+            background-color: var(--header-bg);
+            color: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .board-header {
+            background-color: var(--sub-header);
+            color: white;
+            padding: 10px 12px;
+            font-weight: bold;
+            font-size: 14px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .profile-card {
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            background-color: var(--container-bg);
+            margin-bottom: 20px;
+        }
+
+        .item-box {
+            border: 1px solid var(--border-color);
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background-color: var(--container-bg);
+        }
+
+        .meta-info {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 6px;
+        }
+
+        body.dark-mode .meta-info {
+            color: #aaa;
+        }
+
+        .mod-tag {
+            color: #4a90e2;
+            font-weight: bold;
+        }
+
+        a {
+            color: var(--sub-header);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .inline-error {
+            color: #e53e3e;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1 id="page-title">User Profile</h1>
+            <a href="index.html" style="color:white; text-decoration: none; font-weight: bold;">Home</a>
+        </header>
+
+        <div id="profile-content">
+            <div style="padding: 15px; color: #777;">Loading profile...</div>
+        </div>
+
+        <div class="board-header">Threads by User</div>
+        <div id="user-threads">
+            <div style="padding: 10px; color: #777;">Loading threads...</div>
+        </div>
+
+        <div class="board-header">Replies by User</div>
+        <div id="user-replies">
+            <div style="padding: 10px; color: #777;">Loading replies...</div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://goqyxiucsxzjfdxbdekp.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvcXl4aXVjc3h6amZkeGJkZWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0NTk2OTUsImV4cCI6MjEwMzAzNTY5NX0.3exRdGjsaOrPolFzYAlO-ytlfUHiTa9-SiodUFjtHIk';
+
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        if (localStorage.getItem('darkMode') === 'enabled') document.body.classList.add('dark-mode');
+        if (localStorage.getItem('wideMode') === 'enabled') document.body.classList.add('wide-mode');
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const usernameParam = urlParams.get('u');
+        const userIdParam = urlParams.get('i');
+
+        async function initProfile() {
+            if (!usernameParam && !userIdParam) {
+                document.getElementById('profile-content').innerHTML = '<div class="inline-error">⚠️ No user specified. Use ?u={username} or ?i={userid} in the link.</div>';
+                document.getElementById('user-threads').innerHTML = '';
+                document.getElementById('user-replies').innerHTML = '';
+                return;
+            }
+
+            let profileQuery = _supabase.from('profiles').select('*');
+            if (usernameParam) {
+                profileQuery = profileQuery.eq('username', usernameParam);
+            } else {
+                profileQuery = profileQuery.eq('id', userIdParam);
+            }
+
+            const { data: profile, error } = await profileQuery.maybeSingle();
+
+            if (error || !profile) {
+                document.getElementById('profile-content').innerHTML = '<div class="inline-error">⚠️ User profile not found.</div>';
+                document.getElementById('user-threads').innerHTML = '<div style="padding:10px; color:#777;">None</div>';
+                document.getElementById('user-replies').innerHTML = '<div style="padding:10px; color:#777;">None</div>';
+                return;
+            }
+
+            const profileUserId = profile.id;
+            const profileUsername = profile.username || 'Mystery Meow';
+            const isMod = profile.is_mod === true;
+
+            document.getElementById('page-title').innerText = `${profileUsername}'s Profile`;
+
+            document.getElementById('profile-content').innerHTML = `
+                <div class="profile-card">
+                    <h2 style="margin-top:0; margin-bottom:10px;">
+                        ${profileUsername} ${isMod ? '<span class="mod-tag">[MOD]</span>' : ''}
+                    </h2>
+                    <div class="meta-info"><strong>User ID:</strong> ${profileUserId}</div>
+                    <div class="meta-info"><strong>Role:</strong> ${isMod ? 'Moderator' : 'Member'}</div>
+                </div>
+            `;
+
+            loadUserThreads(profileUserId, profileUsername);
+            loadUserReplies(profileUsername);
+        }
+
+        async function loadUserThreads(userId, username) {
+            const container = document.getElementById('user-threads');
+            
+            // Fetch threads matching user_id or author fallback if needed
+            const { data: threads, error } = await _supabase
+                .from('threads')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false });
+
+            if (error || !threads || threads.length === 0) {
+                container.innerHTML = '<div style="padding: 10px; color: #777;">No threads posted by this user yet.</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            for (let t of threads) {
+                container.innerHTML += `
+                    <div class="item-box">
+                        <div class="meta-info">Posted on ${new Date(t.created_at).toLocaleString()}</div>
+                        <a href="thread.html?id=${t.id}" style="font-weight: bold; font-size: 15px;">${t.title}</a>
+                    </div>
+                `;
+            }
+        }
+
+        async function loadUserReplies(username) {
+            const container = document.getElementById('user-replies');
+
+            const { data: posts, error } = await _supabase
+                .from('posts')
+                .select('*, threads(title)')
+                .eq('author_name', username)
+                .order('created_at', { ascending: false });
+
+            if (error || !posts || posts.length === 0) {
+                container.innerHTML = '<div style="padding: 10px; color: #777;">No replies posted by this user yet.</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            for (let p of posts) {
+                const threadTitle = p.threads ? p.threads.title : 'View Thread';
+                const snippet = p.content.length > 100 ? p.content.substring(0, 100) + '...' : p.content;
+                container.innerHTML += `
+                    <div class="item-box">
+                        <div class="meta-info">Reply in: <a href="thread.html?id=${p.thread_id}">${threadTitle}</a> on ${new Date(p.created_at).toLocaleString()}</div>
+                        <div style="font-size: 14px; white-space: pre-wrap;">${snippet}</div>
+                    </div>
+                `;
+            }
+        }
+
+        initProfile();
+    </script>
+</body>
+</html>
