@@ -6,6 +6,7 @@
     <title>Category - CatThread</title>
     <link rel="icon" type="image/png" href="icons/cat.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@openmoji/openmoji-css@latest/font/openmoji.css">
     <style>
         :root {
             --bg-color: #f0f4f8; --container-bg: #ffffff; --text-color: #1a1a1a;
@@ -15,7 +16,7 @@
             --bg-color: #181c24; --container-bg: #222831; --text-color: #f5f6f8;
             --border-color: #3f4e66; --header-bg: #2b6cb0; --sub-header: #3182ce;
         }
-        body { background-color: var(--bg-color); color: var(--text-color); font-family: Tahoma, sans-serif; padding: 20px; margin: 0; }
+        body { background-color: var(--bg-color); color: var(--text-color); font-family: 'OpenMoji', Tahoma, sans-serif; padding: 20px; margin: 0; }
         .container { width: 100%; max-width: 900px; margin: 0 auto; background-color: var(--container-bg); border: 2px solid var(--border-color); padding: 15px; box-sizing: border-box; }
         header { background-color: var(--header-bg); color: white; padding: 15px; margin-bottom: 15px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
         h1 { margin: 0; font-size: 20px; }
