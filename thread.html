@@ -102,6 +102,11 @@
             color: #aaa;
         }
 
+        .mod-tag {
+            color: #4a90e2;
+            font-weight: bold;
+        }
+
         .comment-box {
             padding: 12px 15px;
             border-bottom: 1px solid var(--border-color);
@@ -388,10 +393,16 @@
             document.getElementById('thread-title').innerHTML = formatContent(thread.title);
 
             let author = 'Mystery Meow';
+            let isMod = false;
             if (thread.user_id) {
-                const { data: profile } = await _supabase.from('profiles').select('username').eq('id', thread.user_id).maybeSingle();
-                if (profile && profile.username) author = profile.username;
+                const { data: profile } = await _supabase.from('profiles').select('username, is_mod').eq('id', thread.user_id).maybeSingle();
+                if (profile) {
+                    if (profile.username) author = profile.username;
+                    if (profile.is_mod) isMod = true;
+                }
             }
+
+            const displayAuthor = isMod ? `${author} <span class="mod-tag">[MOD]</span>` : author;
 
             let threadMenuHTML = '';
             const allowArchive = thread.allow_archive !== false;
@@ -426,7 +437,7 @@
                 <div class="post-box" id="thread-box-${thread.id}">
                     <div id="thread-error" class="inline-error"></div>
                     ${threadMenuHTML}
-                    <div class="meta-info">Started by <b>${author}</b><br>on ${new Date(thread.created_at).toLocaleString()}</div>
+                    <div class="meta-info">Started by <b>${displayAuthor}</b><br>on ${new Date(thread.created_at).toLocaleString()}</div>
                     <div id="thread-content-text" style="white-space: pre-wrap; line-height: 1.5;">${formatContent(thread.content)}</div>
                 </div>
             `;
@@ -464,6 +475,16 @@
             list.innerHTML = '';
             for (let c of comments) {
                 let author = c.author_name || 'Mystery Meow';
+                let isMod = false;
+
+                if (c.author_name) {
+                    const { data: profile } = await _supabase.from('profiles').select('is_mod').eq('username', c.author_name).maybeSingle();
+                    if (profile && profile.is_mod) {
+                        isMod = true;
+                    }
+                }
+
+                const displayAuthor = isMod ? `${author} <span class="mod-tag">[MOD]</span>` : author;
 
                 let commentMenuHTML = '';
                 const allowArchive = c.allow_archive !== false;
@@ -497,7 +518,7 @@
                     <div class="comment-box" id="comment-box-${c.id}">
                         <div id="comment-error-${c.id}" class="inline-error"></div>
                         ${commentMenuHTML}
-                        <div class="meta-info">Reply by <b>${author}</b><br>on ${new Date(c.created_at).toLocaleString()}</div>
+                        <div class="meta-info">Reply by <b>${displayAuthor}</b><br>on ${new Date(c.created_at).toLocaleString()}</div>
                         <div style="white-space: pre-wrap; line-height: 1.5;" id="comment-text-${c.id}">${formatContent(c.content)}</div>
                     </div>
                 `;
