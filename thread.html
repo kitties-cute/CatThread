@@ -270,6 +270,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const threadId = urlParams.get('id');
         let currentUserId = null;
+        let currentUsername = 'Mystery Meow';
         let trustedDomains = [];
 
         async function loadTrustedLinks() {
@@ -356,6 +357,12 @@
                 currentUserId = session.user.id;
                 document.getElementById('reply-section').style.display = 'block';
                 document.getElementById('login-prompt').style.display = 'none';
+
+                // Fetch current user's profile username
+                const { data: profile } = await _supabase.from('profiles').select('username').eq('id', currentUserId).maybeSingle();
+                if (profile && profile.username) {
+                    currentUsername = profile.username;
+                }
             }
             loadThreadData();
         }
@@ -370,7 +377,7 @@
             document.getElementById('back-link').href = `category.html?id=${thread.category_id}`;
             document.getElementById('thread-title').innerHTML = formatContent(thread.title);
 
-            let author = 'Anonymous';
+            let author = 'Mystery Meow';
             if (thread.user_id) {
                 const { data: profile } = await _supabase.from('profiles').select('username').eq('id', thread.user_id).maybeSingle();
                 if (profile && profile.username) author = profile.username;
@@ -379,7 +386,6 @@
             let threadMenuHTML = '';
             const allowArchive = thread.allow_archive !== false;
 
-            // Safely encode all parameters for archive function call
             const encTitle = encodeURIComponent(thread.title || '');
             const encContent = encodeURIComponent(thread.content || '');
             const encAuthor = encodeURIComponent(author);
@@ -418,43 +424,37 @@
         }
 
         async function loadComments() {
-    const list = document.getElementById('comments-list');
+            const list = document.getElementById('comments-list');
 
-    if (!threadId) {
-        console.error('loadComments: missing threadId in URL');
-        list.innerHTML = '<div style="padding:15px; color:red;">Thread id missing in URL.</div>';
-        return;
-    }
+            if (!threadId) {
+                console.error('loadComments: missing threadId in URL');
+                list.innerHTML = '<div style="padding:15px; color:red;">Thread id missing in URL.</div>';
+                return;
+            }
 
-    // convert numeric id to number if the DB stores integers
-    const threadIdValue = /^\d+$/.test(threadId) ? parseInt(threadId, 10) : threadId;
+            const threadIdValue = /^\d+$/.test(threadId) ? parseInt(threadId, 10) : threadId;
 
-    const res = await _supabase
-        .from('posts')
-        .select('*')
-        .eq('thread_id', threadIdValue)
-        .order('created_at', { ascending: true });
+            const res = await _supabase
+                .from('posts')
+                .select('*')
+                .eq('thread_id', threadIdValue)
+                .order('created_at', { ascending: true });
 
-    if (res.error) {
-        console.error('Supabase error fetching comments:', res.error);
-        list.innerHTML = `<div style="padding:15px; color:red;">Error loading replies: ${res.error.message}</div>`;
-        return;
-    }
+            if (res.error) {
+                console.error('Supabase error fetching replies:', res.error);
+                list.innerHTML = `<div style="padding:15px; color:red;">Error loading replies: ${res.error.message}</div>`;
+                return;
+            }
 
-    const comments = res.data;
-    if (!comments || comments.length === 0) {
-        list.innerHTML = '<div style="padding: 15px; color:#777;">No replies yet. Be the first to reply!</div>';
-        return;
-    }
+            const comments = res.data;
+            if (!comments || comments.length === 0) {
+                list.innerHTML = '<div style="padding: 15px; color:#777;">No replies yet. Be the first to reply!</div>';
+                return;
+            }
 
-    list.innerHTML = '';
-    for (let c of comments) {
-        // keep your existing rendering logic here (username lookup, menu html, etc)
-        let author = '{{ERR_CANNOTLOAD}}';
-        if (c.user_id) {
-            const { data: profile } = post.author_name // await _supabase.from('profiles').select('username').eq('username', post.author_name).maybeSingle();
-            if (profile && profile.username) author = profile.username;
-        }
+            list.innerHTML = '';
+            for (let c of comments) {
+                let author = c.author_name || 'Mystery Meow';
 
                 let commentMenuHTML = '';
                 const allowArchive = c.allow_archive !== false;
@@ -462,7 +462,8 @@
                 const encContent = encodeURIComponent(c.content || '');
                 const encAuthor = encodeURIComponent(author);
 
-                if (c.user_id === currentUserId) {
+                // Allow editing/deleting if the post's author_name matches the logged-in user's username
+                if (c.author_name === currentUsername) {
                     commentMenuHTML = `
                         <div class="menu-container">
                             <button class="dots-btn" onclick="toggleMenu(event, 'comment-menu-${c.id}')">⋮</button>
@@ -500,10 +501,12 @@
             
             if (!content) { alert('Reply cannot be empty.'); return; }
             
-            const { error } = await _supabase.from('comments').insert([{
-                thread_id: threadId,
+            const threadIdValue = /^\d+$/.test(threadId) ? parseInt(threadId, 10) : threadId;
+
+            const { error } = await _supabase.from('posts').insert([{
+                thread_id: threadIdValue,
                 content: content,
-                user_id: currentUserId,
+                author_name: currentUsername,
                 allow_archive: allowArchive
             }]);
 
@@ -523,9 +526,9 @@
         }
 
         async function deleteComment(id) {
-            if (!confirm('Are you sure you want to delete this comment?')) return;
-            const { error } = await _supabase.from('comments').delete().eq('id', id);
-            if (error) alert('Error deleting comment: ' + error.message);
+            if (!confirm('Are you sure you want to delete this reply?')) return;
+            const { error } = await _supabase.from('posts').delete().eq('id', id);
+            if (error) alert('Error deleting reply: ' + error.message);
             else loadComments();
         }
 
@@ -569,10 +572,10 @@
 
         async function saveEditComment(id) {
             const newContent = document.getElementById('edit-comment-content').value.trim();
-            if (!newContent) { alert('Comment cannot be empty'); return; }
+            if (!newContent) { alert('Reply cannot be empty'); return; }
 
-            const { error } = await _supabase.from('comments').update({ content: newContent }).eq('id', id);
-            if (error) alert('Error updating comment: ' + error.message);
+            const { error } = await _supabase.from('posts').update({ content: newContent }).eq('id', id);
+            if (error) alert('Error updating reply: ' + error.message);
             else loadComments();
         }
 
