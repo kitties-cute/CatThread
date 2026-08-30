@@ -85,7 +85,7 @@
             <h1>CatThread - 404 Error</h1>
         </header>
 
-        <div style="font-size: 60px; margin-bottom: 10px;">🐱💤</div>
+        <div id="error-emoji" style="font-size: 60px; margin-bottom: 10px; line-height: 1;">😿</div>
         <h2 style="margin-top: 0;">Page Not Found</h2>
         <p style="color: #666; font-size: 14px; line-height: 1.5;">
             Oops! It looks like this page chased a laser pointer straight into an empty cardboard box and disappeared. 
@@ -98,6 +98,21 @@
         // Keep dark mode synced if they had it enabled
         if (localStorage.getItem('darkMode') === 'enabled') {
             document.body.classList.add('dark-mode');
+        }
+
+        // Format emojis to OpenMoji SVGs to match the rest of the site
+        function formatContent(text) {
+            if (!text) return '';
+            return text.replace(/([\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA70}-\u{1FAFF}])/gu, function(match) {
+                let hexCode = match.codePointAt(0).toString(16).toUpperCase();
+                return `<img src="https://cdn.jsdelivr.net/npm/openmoji@latest/color/svg/${hexCode}.svg" alt="${match}" title="${match}" onerror="this.src='icons/cat.png'" style="width: 1em; height: 1em; vertical-align: -0.1em; display: inline-block;">`;
+            });
+        }
+
+        // Apply OpenMoji rendering to the 404 emoji element
+        const emojiEl = document.getElementById('error-emoji');
+        if (emojiEl) {
+            emojiEl.innerHTML = formatContent('😿');
         }
     </script>
 </body>
