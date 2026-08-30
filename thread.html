@@ -230,6 +230,15 @@
         const urlParams = new URLSearchParams(window.location.search);
         const threadId = urlParams.get('id');
 
+        // Converts normal text emojis into OpenMoji SVGs
+        function convertToOpenMoji(text) {
+            if (!text) return '';
+            return text.replace(/([\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA70}-\u{1FAFF}])/gu, function(match) {
+                let hexCode = match.codePointAt(0).toString(16).toUpperCase();
+                return `<img src="https://cdn.jsdelivr.net/npm/openmoji@latest/color/svg/${hexCode}.svg" alt="${match}" style="width: 1.2em; height: 1.2em; vertical-align: -0.2em; display: inline-block;">`;
+            });
+        }
+
         function showErrorModal(message) {
             document.getElementById('error-message-text').innerText = message;
             document.getElementById('error-modal').style.display = 'flex';
@@ -287,7 +296,6 @@
                 if (threadError || !threadData) {
                     threadContainer.innerHTML = '<p style="padding: 10px; color: red;">Could not load thread details.</p>';
                 } else {
-                    // Try to resolve the username using user_id, fallback to existing author fields if present
                     let threadAuthor = threadData.author_name || threadData.username || threadData.user_name;
                     
                     if (!threadAuthor && threadData.user_id) {
@@ -298,9 +306,9 @@
 
                     threadContainer.innerHTML = `
                         <div class="main-thread-box">
-                            <h2 style="margin-top:0;">${threadData.title}</h2>
+                            <h2 style="margin-top:0;">${convertToOpenMoji(threadData.title)}</h2>
                             <div class="post-author">Posted by: ${threadAuthor}</div>
-                            <p>${threadData.content || threadData.body || ''}</p>
+                            <p>${convertToOpenMoji(threadData.content || threadData.body || '')}</p>
                         </div>
                     `;
                 }
@@ -329,7 +337,7 @@
                     repliesContainer.innerHTML += `
                         <div class="post-card">
                             <div class="post-author">${reply.author_name || 'Anonymous'}</div>
-                            <div>${reply.content}</div>
+                            <div>${convertToOpenMoji(reply.content)}</div>
                         </div>
                     `;
                 });
