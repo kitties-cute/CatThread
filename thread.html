@@ -266,20 +266,19 @@
         let currentUserId = null;
         let trustedDomains = [];
 
-        // Load trusted links from trustedlinks.json in root repository
+        // Load trusted links safely without blocking thread loading if missing
         async function loadTrustedLinks() {
             try {
                 const response = await fetch('trustedlinks.json');
                 if (response.ok) {
                     const data = await response.json();
-                    trustedDomains = data.domains || data; // supports array or object containing domains array
+                    trustedDomains = data.domains || data;
                 }
             } catch (e) {
-                console.warn('Could not load trustedlinks.json, all external links will prompt warning.');
+                console.warn('trustedlinks.json not found or failed to load. Continuing normally.');
             }
         }
 
-        // Check if a URL matches trusted domains
         function isTrustedLink(urlStr) {
             try {
                 const urlObj = new URL(urlStr);
@@ -313,17 +312,14 @@
             pendingUrl = '';
         }
 
-        // Converts URLs to clickable links and text emojis into OpenMoji SVGs with fallback
         function formatContent(text) {
             if (!text) return '';
             
-            // 1. Linkify raw URLs
             const urlRegex = /(https?:\/\/[^\s]+)/g;
             let formatted = text.replace(urlRegex, function(url) {
                 return `<a href="#" onclick="handleLinkClick(event, '${url}')" style="color: #1e90ff; text-decoration: underline;">${url}</a>`;
             });
 
-            // 2. Convert Emojis to OpenMoji with fallback error icon
             formatted = formatted.replace(/([\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA70}-\u{1FAFF}])/gu, function(match) {
                 let hexCode = match.codePointAt(0).toString(16).toUpperCase();
                 return `<img src="https://cdn.jsdelivr.net/npm/openmoji@latest/color/svg/${hexCode}.svg" alt="${match}" title="${match}" onerror="this.src='icons/cat.png'" style="width: 1.2em; height: 1.2em; vertical-align: -0.2em; display: inline-block;">`;
@@ -342,11 +338,12 @@
         }
 
         window.onclick = function() {
-            document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none';);
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
         }
 
         async function init() {
             await loadTrustedLinks();
+            
             const { data: { session } } = await _supabase.auth.getSession();
             if (session) {
                 currentUserId = session.user.id;
