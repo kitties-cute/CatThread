@@ -418,21 +418,43 @@
         }
 
         async function loadComments() {
-            const { data: comments } = await _supabase.from('comments').select('*').eq('thread_id', threadId).order('created_at', { ascending: true });
-            const list = document.getElementById('comments-list');
+    const list = document.getElementById('comments-list');
 
-            if (!comments || comments.length === 0) {
-                list.innerHTML = '<div style="padding: 15px; color:#777;">No replies yet. Be the first to reply!</div>';
-                return;
-            }
+    if (!threadId) {
+        console.error('loadComments: missing threadId in URL');
+        list.innerHTML = '<div style="padding:15px; color:red;">Thread id missing in URL.</div>';
+        return;
+    }
 
-            list.innerHTML = '';
-            for (let c of comments) {
-                let author = 'Anonymous';
-                if (c.user_id) {
-                    const { data: profile } = await _supabase.from('profiles').select('username').eq('id', c.user_id).maybeSingle();
-                    if (profile && profile.username) author = profile.username;
-                }
+    // convert numeric id to number if the DB stores integers
+    const threadIdValue = /^\d+$/.test(threadId) ? parseInt(threadId, 10) : threadId;
+
+    const res = await _supabase
+        .from('comments')
+        .select('*')
+        .eq('thread_id', threadIdValue)
+        .order('created_at', { ascending: true });
+
+    if (res.error) {
+        console.error('Supabase error fetching comments:', res.error);
+        list.innerHTML = `<div style="padding:15px; color:red;">Error loading replies: ${res.error.message}</div>`;
+        return;
+    }
+
+    const comments = res.data;
+    if (!comments || comments.length === 0) {
+        list.innerHTML = '<div style="padding: 15px; color:#777;">No replies yet. Be the first to reply!</div>';
+        return;
+    }
+
+    list.innerHTML = '';
+    for (let c of comments) {
+        // keep your existing rendering logic here (username lookup, menu html, etc)
+        let author = 'Anonymous';
+        if (c.user_id) {
+            const { data: profile } = await _supabase.from('profiles').select('username').eq('id', c.user_id).maybeSingle();
+            if (profile && profile.username) author = profile.username;
+        }
 
                 let commentMenuHTML = '';
                 const allowArchive = c.allow_archive !== false;
