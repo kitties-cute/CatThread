@@ -93,6 +93,7 @@
             font-size: 12px;
             color: #666;
             margin-bottom: 10px;
+            line-height: 1.4;
         }
 
         body.dark-mode .meta-info {
@@ -401,7 +402,7 @@
             document.getElementById('main-post-container').innerHTML = `
                 <div class="post-box" id="thread-box-${thread.id}">
                     ${threadMenuHTML}
-                    <div class="meta-info">Started by <b>${author}</b> on ${new Date(thread.created_at).toLocaleString()}</div>
+                    <div class="meta-info">Started by <b>${author}</b><br>on ${new Date(thread.created_at).toLocaleString()}</div>
                     <div id="thread-content-text" style="white-space: pre-wrap; line-height: 1.5;">${formatContent(thread.content)}</div>
                 </div>
             `;
@@ -454,7 +455,7 @@
                 list.innerHTML += `
                     <div class="comment-box" id="comment-box-${c.id}">
                         ${commentMenuHTML}
-                        <div class="meta-info">Reply by <b>${author}</b> on ${new Date(c.created_at).toLocaleString()}</div>
+                        <div class="meta-info">Reply by <b>${author}</b><br>on ${new Date(c.created_at).toLocaleString()}</div>
                         <div style="white-space: pre-wrap; line-height: 1.5;" id="comment-text-${c.id}">${formatContent(c.content)}</div>
                     </div>
                 `;
@@ -600,6 +601,7 @@
                         font-size: 12px;
                         color: #666;
                         margin-bottom: 10px;
+                        line-height: 1.4;
                     }
                 </style>
             </head>
@@ -611,7 +613,7 @@
                     </header>
                     <div class="post-box">
                         ${title ? `<h2 style="margin-top:0; font-size:18px;">${title}</h2>` : ''}
-                        <div class="meta-info"><strong>Author:</strong> ${author} &bull; <strong>Date:</strong> ${new Date(date).toLocaleString()}</div>
+                        <div class="meta-info"><strong>Author:</strong> ${author}<br><strong>Date:</strong> ${new Date(date).toLocaleString()}</div>
                         <hr style="border: 0; border-top: 1px solid #b0c4de; margin: 10px 0;">
                         <div style="white-space: pre-wrap; line-height: 1.5;">${content}</div>
                     </div>
