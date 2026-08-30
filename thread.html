@@ -373,9 +373,8 @@
                 if (profile && profile.username) author = profile.username;
             }
 
-            // Generate menu options for Thread
             let threadMenuHTML = '';
-            const allowArchive = thread.allow_archive !== false; // defaults to true if null/undefined
+            const allowArchive = thread.allow_archive !== false;
 
             if (thread.user_id === currentUserId) {
                 threadMenuHTML = `
@@ -428,7 +427,7 @@
                 }
 
                 let commentMenuHTML = '';
-                const allowArchive = c.allow_archive !== false; // defaults to true
+                const allowArchive = c.allow_archive !== false;
 
                 if (c.user_id === currentUserId) {
                     commentMenuHTML = `
@@ -553,15 +552,69 @@
             <head>
                 <meta charset="UTF-8">
                 <title>Archived ${type} - CatThread</title>
-                <style>body { font-family: Tahoma, sans-serif; padding: 20px; background: #f0f4f8; color: #1a1a1a; }</style>
+                <link rel="icon" type="image/png" href="icons/cat.png">
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@openmoji/openmoji-css@latest/font/openmoji.css">
+                <style>
+                    body { 
+                        font-family: 'OpenMoji', Tahoma, Arial, sans-serif; 
+                        padding: 20px; 
+                        background: #f0f4f8; 
+                        color: #1a1a1a; 
+                        margin: 0;
+                    }
+                    .container {
+                        max-width: 800px;
+                        margin: 0 auto;
+                        background: #ffffff;
+                        border: 2px solid #b0c4de;
+                        padding: 15px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                        box-sizing: border-box;
+                    }
+                    header {
+                        background-color: #3a75c4;
+                        color: white;
+                        padding: 15px;
+                        margin-bottom: 15px;
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                    }
+                    header img {
+                        width: 32px;
+                        height: 32px;
+                        object-fit: contain;
+                    }
+                    header h1 {
+                        margin: 0;
+                        font-size: 20px;
+                    }
+                    .post-box {
+                        border: 1px solid #b0c4de;
+                        padding: 15px;
+                        background-color: #ffffff;
+                        word-break: break-word;
+                    }
+                    .meta-info {
+                        font-size: 12px;
+                        color: #666;
+                        margin-bottom: 10px;
+                    }
+                </style>
             </head>
             <body>
-                <div style="background: white; border: 2px solid #b0c4de; padding: 20px; max-width: 700px; margin: 0 auto; word-break: break-word;">
-                    <h2>Archived ${type}: ${title || 'Reply'}</h2>
-                    <p><strong>Author:</strong> ${author}</p>
-                    <p><strong>Date Posted:</strong> ${new Date(date).toLocaleString()}</p>
-                    <hr>
-                    <div style="white-space: pre-wrap; line-height: 1.5;">${content}</div>
+                <div class="container">
+                    <header>
+                        <img src="icons/cat.png" alt="CatThread Logo" onerror="this.style.display='none'">
+                        <h1>CatThread - Archived ${type}</h1>
+                    </header>
+                    <div class="post-box">
+                        ${title ? `<h2 style="margin-top:0; font-size:18px;">${title}</h2>` : ''}
+                        <div class="meta-info"><strong>Author:</strong> ${author} &bull; <strong>Date:</strong> ${new Date(date).toLocaleString()}</div>
+                        <hr style="border: 0; border-top: 1px solid #b0c4de; margin: 10px 0;">
+                        <div style="white-space: pre-wrap; line-height: 1.5;">${content}</div>
+                    </div>
                 </div>
             </body>
             </html>`;
