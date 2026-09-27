@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>CatThread — Community forum</title>
+  <link rel="icon" type="image/png" href="icons/cat.png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{color-scheme:light;--page:#f4f6fa;--surface:#fff;--surface-soft:#f8faff;--text:#182338;--muted:#66748a;--line:#e3e9f2;--brand:#4169d8;--brand-hover:#3155ba;--brand-soft:#edf2ff;--announcement:#fff8e8;--announcement-line:#f0dfb6;--shadow:0 16px 45px rgba(31,49,83,.08);--radius:18px;--max-width:920px}
+    body.dark-mode{color-scheme:dark;--page:#111827;--surface:#1b2638;--surface-soft:#202e43;--text:#edf3ff;--muted:#a6b3c8;--line:#34445d;--brand:#88a8ff;--brand-hover:#a5bbff;--brand-soft:#273859;--announcement:#3a3424;--announcement-line:#655538;--shadow:0 16px 45px rgba(0,0,0,.24)}
+    body.wide-mode{--max-width:100%}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;padding:88px 24px 48px;background:var(--page);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.5;transition:background .2s,color .2s}
+    button,input{font:inherit}button{cursor:pointer}.settings-menu{position:fixed;z-index:10;top:16px;right:20px;display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 24px rgba(25,42,74,.1)}.settings-menu .settings-label{font-size:12px;color:var(--muted);font-weight:700;padding:0 3px}.icon{width:18px;height:18px;object-fit:contain}.settings-menu button{border:0;border-radius:9px;background:transparent;color:var(--text);padding:8px 10px;font-size:12px;font-weight:700;transition:background .18s,color .18s}.settings-menu button:hover{background:var(--brand-soft);color:var(--brand)}
+    .container{width:100%;max-width:var(--max-width);margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow);transition:max-width .25s}.site-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:6px 2px 24px;border-bottom:1px solid var(--line)}h1{display:flex;align-items:center;gap:12px;margin:0;font-size:clamp(24px,4vw,31px);letter-spacing:-.045em;line-height:1.2}.logo{width:38px;height:38px;object-fit:contain;padding:6px;background:var(--brand-soft);border-radius:12px}.user-status{font-size:13px;font-weight:700;color:var(--muted);background:var(--surface-soft);border:1px solid var(--line);border-radius:999px;padding:8px 12px}
+    .announcement{display:flex;align-items:flex-start;gap:12px;margin:22px 0;padding:15px 17px;background:var(--announcement);border:1px solid var(--announcement-line);border-radius:13px;color:var(--text);font-size:14px}.announcement img{flex:none;margin-top:2px}.announcement b{margin-right:4px}.section-heading{display:flex;align-items:center;gap:10px;margin:30px 0 0;padding:0 2px 13px;border-bottom:1px solid var(--line);font-size:18px;letter-spacing:-.02em}.section-heading:before{content:"";width:4px;height:20px;border-radius:9px;background:var(--brand)}#categories-list{overflow:hidden;border:1px solid var(--line);border-radius:13px;margin-top:14px}.category-item{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:17px 19px;background:var(--surface);border-bottom:1px solid var(--line);transition:background .18s}.category-item:last-child{border-bottom:0}.category-item:hover{background:var(--surface-soft)}.category-item a{color:var(--brand);font-weight:750;text-decoration:none;font-size:16px}.category-item a:hover{text-decoration:underline;text-underline-offset:3px}.category-desc{margin:4px 0 0;color:var(--muted);font-size:13px}.category-kind{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;color:var(--muted);font-size:12px;font-weight:700;background:var(--surface-soft);border:1px solid var(--line);border-radius:999px;padding:6px 10px}.category-kind:before{content:"";width:7px;height:7px;background:#67b88a;border-radius:50%}
+    .auth-box{margin-top:30px;padding:22px;background:var(--surface-soft);border:1px solid var(--line);border-radius:15px}.auth-box h2{margin:0 0 5px;font-size:19px;letter-spacing:-.025em}.auth-intro{margin:0 0 16px;color:var(--muted);font-size:13px}.auth-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.field-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}input{width:100%;min-width:0;padding:11px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text);outline:none;transition:border .15s,box-shadow .15s}input::placeholder{color:var(--muted)}input:focus{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 20%,transparent)}.auth-actions{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:13px}.action-btn{min-height:40px;padding:9px 15px;border:0;border-radius:9px;background:var(--brand);color:#fff;font-weight:750;font-size:13px;transition:background .15s,transform .15s}.action-btn:hover{background:var(--brand-hover);transform:translateY(-1px)}.action-btn.secondary{background:#66748a}.action-btn.danger{background:#d94b5b}.gsi-material-button{height:40px;padding:0 13px;border:1px solid #c9ced6;border-radius:9px;background:#fff;color:#262a30;font:600 13px Arial,sans-serif;letter-spacing:.1px}.gsi-material-button:hover{background:#f7f8fa;box-shadow:0 2px 6px #00000017}.gsi-material-button-content-wrapper{display:flex;align-items:center;justify-content:center;gap:9px}.gsi-material-button-icon,.gsi-material-button-icon svg{width:18px;height:18px}.logged-message{margin:0 0 14px;color:var(--muted)}
+    .modal-overlay{display:none;position:fixed;inset:0;z-index:20;align-items:center;justify-content:center;padding:20px;background:rgba(11,19,34,.58);backdrop-filter:blur(4px)}.modal-overlay[aria-hidden="false"]{display:flex}.modal-content{width:min(100%,430px);padding:25px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:17px;box-shadow:0 24px 70px #0004}.modal-content h2{margin:0 0 7px;font-size:21px}.modal-content p{margin:0 0 17px;color:var(--muted);font-size:13px}.modal-content label{display:block;margin-bottom:6px;font-size:13px;font-weight:700}.modal-content .action-btn{width:100%;margin-top:10px}.modal-content .close-button{margin-top:9px}.loading-state,.empty-state{padding:21px;color:var(--muted);font-size:14px}.error-state{color:#ce4858}
+    button:focus-visible,a:focus-visible{outline:3px solid color-mix(in srgb,var(--brand) 55%,transparent);outline-offset:3px}
+    @media(max-width:650px){body{padding:86px 14px 28px}.settings-menu{left:12px;right:12px;top:12px;justify-content:flex-end;gap:3px;padding:5px}.settings-menu .settings-label{margin-right:auto}.settings-menu button{padding:8px 7px;font-size:11px}.container{padding:19px 16px;border-radius:15px}.site-header{align-items:flex-start;flex-direction:column;padding-bottom:18px}.user-status{font-size:12px}.announcement{margin:17px 0;padding:13px;font-size:13px}.category-item{padding:15px 13px}.category-kind{font-size:0;padding:8px}.category-kind:before{width:8px;height:8px}.auth-box{padding:17px}.auth-fields{grid-template-columns:1fr}.auth-actions>*{flex:1 1 auto}.gsi-material-button{flex:1 1 100%}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+  </style>
+</head>
+<body>
+  <nav class="settings-menu" aria-label="Display settings">
+    <img src="icons/settings.png" alt="" class="icon">
+    <span class="settings-label">Display</span>
+    <button type="button" onclick="toggleDarkMode()" aria-label="Toggle dark mode">☾ Dark</button>
+    <button type="button" onclick="toggleWideMode()" aria-label="Toggle wide layout">↔ Wide</button>
+    <button type="button" id="open-settings-modal" hidden onclick="openSettingsModal()">Account</button>
+  </nav>
+  <div class="modal-overlay" id="settings-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="settings-title" onclick="if(event.target===this)closeSettingsModal()">
+    <div class="modal-content">
+      <h2 id="settings-title">Account settings</h2><p>Choose the username other members will see.</p>
+      <label for="new-username-input">New username</label>
+      <input type="text" id="new-username-input" placeholder="Enter a new username" autocomplete="username">
+      <button class="action-btn" type="button" onclick="updateUsername()">Update username</button>
+      <button class="action-btn secondary close-button" type="button" onclick="closeSettingsModal()">Close</button>
+    </div>
+  </div>
+  <main class="container">
+    <header class="site-header">
+      <h1><img src="icons/cat.png" alt="" class="logo">CatThread</h1>
+      <div id="user-status" class="user-status" role="status">Not logged in</div>
+    </header>
+    <aside class="announcement" aria-label="Announcement">
+      <img src="icons/announcement.png" alt="" class="icon">
+      <div><b>Announcement</b> Welcome to CatThread! Browse categories to view and reply to threads.</div>
+    </aside>
+    <section aria-labelledby="categories-title">
+      <h2 id="categories-title" class="section-heading">Categories</h2>
+      <div id="categories-list" aria-live="polite"><div class="loading-state">Loading categories…</div></div>
+    </section>
+    <section class="auth-box" id="auth-section" aria-labelledby="auth-title">
+      <h2 id="auth-title">Join the conversation</h2>
+      <p class="auth-intro">Create an account or log in to take part in the community.</p>
+      <div id="auth-forms">
+        <div class="auth-fields">
+          <label class="field-label" for="username">Username</label><input type="text" id="username" placeholder="Unique username (for sign up)" autocomplete="username">
+          <label class="field-label" for="email">Email address</label><input type="email" id="email" placeholder="Email address" autocomplete="email">
+          <label class="field-label" for="password">Password</label><input type="password" id="password" placeholder="Password" autocomplete="current-password">
+        </div>
+        <div class="auth-actions">
+          <button class="action-btn" type="button" onclick="signUpWithEmail()">Sign up</button>
+          <button class="action-btn secondary" type="button" onclick="loginWithEmail()">Log in</button>
+          <button class="gsi-material-button" type="button" onclick="loginWithGoogle()" aria-label="Sign in with Google">
+            <span class="gsi-material-button-content-wrapper"><span class="gsi-material-button-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span><span>Sign in with Google</span></span>
+          </button>
+        </div>
+      </div>
+      <div id="logged-in-panel" style="display:none">
+        <p class="logged-message">Welcome back, <strong id="current-username"></strong>!</p>
+        <button class="action-btn danger" type="button" onclick="logout()">Log out</button>
+      </div>
+    </section>
+  </main>
+  <script>
+    const SUPABASE_URL = 'https://goqyxiucsxzjfdxbdekp.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvcXl4aXVjc3h6amZkeGJkZWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0NTk2OTUsImV4cCI6MjEwMzAzNTY5NX0.3exRdGjsaOrPolFzYAlO-ytlfUHiTa9-SiodUFjtHIk';
+    const { createClient } = supabase;
+    const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    if (localStorage.getItem('darkMode') === 'enabled') document.body.classList.add('dark-mode');
+    if (localStorage.getItem('wideMode') === 'enabled') document.body.classList.add('wide-mode');
+
+    function convertToOpenMoji(text) {
+      if (!text) return '';
+      return text.replace(/([\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA70}-\u{1FAFF}])/gu, match => {
+        const hexCode = match.codePointAt(0).toString(16).toUpperCase();
+        return `<img src="https://cdn.jsdelivr.net/npm/openmoji@latest/color/svg/${hexCode}.svg" alt="${match}" style="width:1.2em;height:1.2em;vertical-align:-.2em;display:inline-block">`;
+      });
+    }
+    function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem('darkMode', document.body.classList.contains('dark-mode') ? 'enabled' : 'disabled'); }
+    function toggleWideMode() { document.body.classList.toggle('wide-mode'); localStorage.setItem('wideMode', document.body.classList.contains('wide-mode') ? 'enabled' : 'disabled'); }
+    function openSettingsModal() { const modal=document.getElementById('settings-modal'); modal.setAttribute('aria-hidden','false'); document.getElementById('new-username-input').focus(); }
+    function closeSettingsModal() { document.getElementById('settings-modal').setAttribute('aria-hidden','true'); }
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') closeSettingsModal(); });
+
+    async function updateUsername() {
+      const newUsername = document.getElementById('new-username-input').value.trim();
+      if (!newUsername) { alert('Please enter a valid username!'); return; }
+      const { data: { session } } = await _supabase.auth.getSession();
+      if (!session) { alert('You must be logged in.'); return; }
+      const { data: existing } = await _supabase.from('profiles').select('id, username').eq('username', newUsername).maybeSingle();
+      if (existing && existing.id !== session.user.id) { alert('Username already taken!'); return; }
+      const { error } = await _supabase.from('profiles').update({ username: newUsername }).eq('id', session.user.id);
+      if (error) alert('Error: ' + error.message); else { alert('Username updated!'); location.reload(); }
+    }
+    async function loadCategories() {
+      const container = document.getElementById('categories-list');
+      const { data: categories, error } = await _supabase.from('categories').select('*');
+      if (error) { container.innerHTML = `<div class="loading-state error-state">Unable to load categories: ${escapeHtml(error.message)}</div>`; return; }
+      if (!categories || !categories.length) { container.innerHTML = '<div class="empty-state">No categories yet. Check back soon!</div>'; return; }
+      container.innerHTML = '';
+      categories.forEach(cat => {
+        const item=document.createElement('div'); item.className='category-item';
+        const info=document.createElement('div');
+        const link=document.createElement('a'); link.href=`category.html?id=${encodeURIComponent(cat.id)}`; link.innerHTML=convertToOpenMoji(escapeHtml(cat.name || 'Untitled category'));
+        const desc=document.createElement('p'); desc.className='category-desc'; desc.innerHTML=convertToOpenMoji(escapeHtml(cat.description || ''));
+        info.append(link,desc);
+        const kind=document.createElement('span'); kind.className='category-kind'; kind.textContent='Folder / Board';
+        item.append(info,kind); container.append(item);
+      });
+    }
+    function escapeHtml(value) { return String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])); }
+    async function signUpWithEmail() {
+      const username = document.getElementById('username').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      if (!username) { alert('Enter a username!'); return; }
+      if (!email || !password) { alert('Enter your email address and password.'); return; }
+      const { data: existing } = await _supabase.from('profiles').select('username').eq('username', username).maybeSingle();
+      if (existing) { alert('Username taken!'); return; }
+      const { data, error } = await _supabase.auth.signUp({ email, password });
+      if (error) { alert(error.message); return; }
+      if (data.user) { const { error: profileError } = await _supabase.from('profiles').insert([{ id: data.user.id, username }]); if (profileError) { alert('Account created, but profile setup failed: ' + profileError.message); return; } alert('Signup successful!'); }
+    }
+    async function loginWithEmail() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const { error } = await _supabase.auth.signInWithPassword({ email, password });
+      if (error) alert(error.message); else location.reload();
+    }
+    async function loginWithGoogle() {
+      const { error } = await _supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + window.location.pathname } });
+      if (error) alert('Google login error: ' + error.message);
+    }
+    async function logout() { await _supabase.auth.signOut(); location.reload(); }
+    async function checkUser() {
+      const { data: { session } } = await _supabase.auth.getSession();
+      if (session) {
+        document.getElementById('auth-forms').style.display = 'none';
+        document.getElementById('logged-in-panel').style.display = 'block';
+        document.getElementById('open-settings-modal').hidden = false;
+        const { data: profile } = await _supabase.from('profiles').select('username').eq('id', session.user.id).single();
+        const name = profile ? profile.username : session.user.email;
+        document.getElementById('current-username').textContent = name;
+        document.getElementById('user-status').textContent = `Logged in: ${name}`;
+        if (profile && profile.username) document.getElementById('new-username-input').value = profile.username;
+      }
+    }
+    loadCategories();
+    checkUser();
+  </script>
+</body>
+</html>
